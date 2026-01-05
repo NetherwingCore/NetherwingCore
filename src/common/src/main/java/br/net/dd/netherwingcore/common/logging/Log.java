@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class Log {
     public static void log(String message) {
-
+        log(new InformationMessage(message));
     }
 
     public static void log(Detail... details) {
