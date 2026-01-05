@@ -1,5 +1,7 @@
 package br.net.dd.netherwingcore.common.logging;
 
+import br.net.dd.netherwingcore.common.serialization.FileManager;
+
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,6 +33,7 @@ public class Log {
 
         logFiles.forEach(path -> {
             System.out.println("Logging to file: " + path.toString());
+            FileManager.write("[" + level.get().name() + "] " + message.get(), path);
         });
 
     }
