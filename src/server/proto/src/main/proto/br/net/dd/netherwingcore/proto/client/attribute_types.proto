@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package bgs.protocol;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "AttributeTypesProto";
+option optimize_for = CODE_SIZE;
+
+// Import EntityId type, used within Variant.
+import "br/net/dd/netherwingcore/proto/client/entity_types.proto";
+
+// Represents a generic value that can hold different types.
+message Variant {
+  // Holds a boolean value.
+  bool bool_value = 2;
+
+  // Holds an integer (int64) value.
+  int64 int_value = 3;
+
+  // Holds a double (float) value.
+  double float_value = 4;
+
+  // Holds a string value.
+  string string_value = 5;
+
+  // Holds binary data.
+  bytes blob_value = 6;
+
+  // Holds binary data representing a message.
+  bytes message_value = 7;
+
+  // Holds a string representing a FOURCC code.
+  string fourcc_value = 8;
+
+  // Holds an unsigned integer (uint64) value.
+  uint64 uint_value = 9;
+
+  // Holds an EntityId value.
+  EntityId entity_id_value = 10;
+}
+
+// Represents a named attribute with a generic value.
+message Attribute {
+  // The name/key of the attribute.
+  string name = 1;
+
+  // The value of the attribute.
+  Variant value = 2;
+}
+
+// Filters attributes using an operation and a repeated list of Attribute.
+message AttributeFilter {
+  // The filter operation to apply.
+  Operation op = 1;
+
+  // The attributes to filter; can be multiple.
+  repeated Attribute attribute = 2;
+
+  // Operations for attribute filtering.
+  enum Operation {
+    // Matches none of the attributes.
+    MATCH_NONE = 0;
+    // Matches any of the attributes.
+    MATCH_ANY = 1;
+    // Matches all attributes.
+    MATCH_ALL = 2;
+    // Matches all, most specific attributes.
+    MATCH_ALL_MOST_SPECIFIC = 3;
+  }
+}

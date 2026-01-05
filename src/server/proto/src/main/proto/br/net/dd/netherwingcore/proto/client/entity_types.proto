@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+// Package definition for protocol buffers used by DestinyCore.
+// Contains definitions for entity identifiers and player/account identity info.
+
+package bgs.protocol;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "EntityTypesProto";
+option optimize_for = CODE_SIZE;
+
+// Message representing a unique entity identifier.
+// The high and low fields together form a 128-bit identifier.
+message EntityId {
+  // High 64 bits of the identifier.
+  uint64 high = 1;
+
+  // Low 64 bits of the identifier.
+  uint64 low = 2;
+}
+
+// Message representing account and game account identity.
+// Used to identify player entities and game accounts.
+message Identity {
+  // Account identifier (could represent the player's account).
+  EntityId account_id = 1;
+
+  // Game account identifier (specific to the game user/session).
+  EntityId game_account_id = 2;
+}

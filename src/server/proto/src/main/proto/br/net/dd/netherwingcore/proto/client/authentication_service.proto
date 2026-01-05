@@ -1,0 +1,178 @@
+syntax = "proto3";
+
+package bgs.protocol.authentication.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "AuthenticationServiceProto";
+option optimize_for = CODE_SIZE;
+
+// Import necessary types from external proto files
+import "br/net/dd/netherwingcore/proto/client/account_types.proto";
+import "br/net/dd/netherwingcore/proto/client/content_handle_types.proto";
+import "br/net/dd/netherwingcore/proto/client/entity_types.proto";
+import "br/net/dd/netherwingcore/proto/client/rpc_types.proto";
+
+// Message for requesting a module load
+message ModuleLoadRequest {
+  bgs.protocol.ContentHandle module_handle = 1; // Handle for the module to load
+  bytes message = 2; // Optional initialization message for the module
+}
+
+// Notification about a module load result
+message ModuleNotification {
+  int32 module_id = 2; // Module ID assigned
+  uint32 result = 3; // Status/result code for the operation
+}
+
+// Message for requesting a message be sent to a module
+message ModuleMessageRequest {
+  int32 module_id = 1; // Target module ID
+  bytes message = 2; // Message to send to the module
+}
+
+// Authentication logon request
+message LogonRequest {
+  string program = 1; // Game/program identifier
+  string platform = 2; // Platform (e.g., Win, Mac)
+  string locale = 3; // User locale/country
+  string email = 4; // User email (login)
+  string version = 5; // Client version string
+  int32 application_version = 6; // Application build/version code
+  bool public_computer = 7; // Is a public/shared computer
+  bool allow_logon_queue_notifications = 10; // Allow notifications about logon queue state
+  bytes cached_web_credentials = 12; // Cached web credentials from previous logon
+  string user_agent = 14; // User agent string (client identification)
+  string device_id = 15; // Device identifier, if applicable
+}
+
+// Authentication logon result with user/account info
+message LogonResult {
+  uint32 error_code = 1; // Logon error code (see BattlenetRpcErrorCodes)
+  bgs.protocol.EntityId account_id = 2; // Unique account/entity ID
+  repeated bgs.protocol.EntityId game_account_id = 3; // One or more game account IDs linked
+  string email = 4; // User email
+  repeated uint32 available_region = 5; // List of available regions for account
+  uint32 connected_region = 6; // Region currently connected to
+  string battle_tag = 7; // User's Battletag
+  string geoip_country = 8; // Country identified by geoip (for region restriction)
+  bytes session_key = 9; // Encrypted session key
+  bool restricted_mode = 10; // User in restricted mode (limited permissions)
+}
+
+// SSO Token Generation Request
+message GenerateSSOTokenRequest {
+  uint32 program = 1; // Program ID
+}
+
+// SSO Token Generation Response
+message GenerateSSOTokenResponse {
+  bytes sso_id = 1; // SSO Token ID
+  bytes sso_secret = 2; // SSO Token Secret
+}
+
+// Logon Update Request (error notification/step update)
+message LogonUpdateRequest {
+  uint32 error_code = 1; // Error/status code
+}
+
+// Update about logon queue position/wait time
+message LogonQueueUpdateRequest {
+  uint32 position = 1; // Position in the queue
+  uint64 estimated_time = 2; // Estimated waiting time (seconds)
+  uint64 eta_deviation_in_sec = 3; // Estimated time variance/deviation (seconds)
+}
+
+// Notification with account license/settings
+message AccountSettingsNotification {
+  repeated bgs.protocol.account.v1.AccountLicense licenses = 1; // Licenses linked to account
+  bool is_using_rid = 2; // Using Region ID?
+  bool is_playing_from_igr = 3; // Playing from IGR (Cybercafe)?
+  bool can_receive_voice = 4; // Account can receive voice comms
+  bool can_send_voice = 5; // Account can send voice comms
+}
+
+// Server state change notification/request
+message ServerStateChangeRequest {
+  uint32 state = 1; // New server state code
+  uint64 event_time = 2; // Time of event (epoch seconds)
+}
+
+// Client/game version info structure
+message VersionInfo {
+  uint32 number = 1; // Version/build number
+  string patch = 2; // Patch version/hotfix info
+  bool is_optional = 3; // Is version update optional
+  uint64 kick_time = 4; // Kick time (if scheduled) for required update
+}
+
+// Notification about new client/game/server version
+message VersionInfoNotification {
+  VersionInfo version_info = 1; // Updated version info
+}
+
+// In-memory module load request with key/input
+message MemModuleLoadRequest {
+  bgs.protocol.ContentHandle handle = 1; // Module handle ref
+  bytes key = 2; // Access key data
+  bytes input = 3; // Input data for module
+}
+
+// In-memory module load response
+message MemModuleLoadResponse {
+  bytes data = 1; // Resulting loaded data
+}
+
+// Request to select a specific game account
+message SelectGameAccountRequest {
+  bgs.protocol.EntityId game_account_id = 1; // Chosen game account ID
+}
+
+// Notification request that game account selection is complete
+message GameAccountSelectedRequest {
+  uint32 result = 1; // Result code
+  bgs.protocol.EntityId game_account_id = 2; // The selected account (if any)
+}
+
+// Request to generate web credentials (e.g., for login)
+message GenerateWebCredentialsRequest {
+  uint32 program = 1; // Program ID
+}
+
+// Response containing generated web credentials
+message GenerateWebCredentialsResponse {
+  bytes web_credentials = 1; // Web credentials data
+}
+
+// Request to verify web credentials
+message VerifyWebCredentialsRequest {
+  bytes web_credentials = 1; // Credentials to verify
+}
+
+// --- Service Definitions ---
+
+// AuthenticationListener service for authentication RPC events
+service AuthenticationListener {
+  rpc OnModuleLoad(ModuleLoadRequest) returns (NO_RESPONSE); // Fired when module should be loaded on client
+  rpc OnModuleMessage(ModuleMessageRequest) returns (NoData); // Fired when a message is sent to a loaded module
+  rpc OnServerStateChange(ServerStateChangeRequest) returns (NO_RESPONSE); // Notify client about server state update
+  rpc OnLogonComplete(LogonResult) returns (NO_RESPONSE); // Called after logon completes
+  rpc OnMemModuleLoad(MemModuleLoadRequest) returns (MemModuleLoadResponse); // For loading modules into memory
+  rpc OnLogonUpdate(LogonUpdateRequest) returns (NO_RESPONSE); // Notify client about logon update/error
+  rpc OnVersionInfoUpdated(VersionInfoNotification) returns (NO_RESPONSE); // Notify client about available new version info
+  rpc OnLogonQueueUpdate(LogonQueueUpdateRequest) returns (NO_RESPONSE); // Notify client about logon queue status
+  rpc OnLogonQueueEnd(NoData) returns (NO_RESPONSE); // Notify client that logon queue ended
+  rpc OnGameAccountSelected(GameAccountSelectedRequest) returns (NO_RESPONSE); // Notify client about selected game account
+}
+
+// Main AuthenticationService for account/game authentication backend
+service AuthenticationService {
+  rpc Logon(LogonRequest) returns (NoData); // Logon request from client
+  rpc ModuleNotify(ModuleNotification) returns (NoData); // Notification about module load
+  rpc ModuleMessage(ModuleMessageRequest) returns (NoData); // Message to module
+  rpc SelectGameAccount_DEPRECATED(bgs.protocol.EntityId) returns (NoData); // Deprecated game account selection
+  rpc GenerateSSOToken(GenerateSSOTokenRequest) returns (GenerateSSOTokenResponse); // Generate SSO token for authentication
+  rpc SelectGameAccount(SelectGameAccountRequest) returns (NoData); // Selects a specific game account for the session
+  rpc VerifyWebCredentials(VerifyWebCredentialsRequest) returns (NoData); // Verify client-supplied web credentials
+  rpc GenerateWebCredentials(GenerateWebCredentialsRequest) returns (GenerateWebCredentialsResponse); // Generates web credentials for client
+}

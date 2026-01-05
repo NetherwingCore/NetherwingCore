@@ -1,0 +1,124 @@
+syntax = "proto3";
+
+package bgs.protocol.game_utilities.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "GameUtilitiesServiceProto";
+option optimize_for = CODE_SIZE;
+
+// Import custom types used in attributes, accounts, content, etc.
+import "br/net/dd/netherwingcore/proto/client/attribute_types.proto";
+import "br/net/dd/netherwingcore/proto/client/content_handle_types.proto";
+import "br/net/dd/netherwingcore/proto/client/entity_types.proto";
+import "br/net/dd/netherwingcore/proto/client/game_utilities_types.proto";
+import "br/net/dd/netherwingcore/proto/client/rpc_types.proto";
+
+// Request sent by the client for game utility operations.
+message ClientRequest {
+  repeated bgs.protocol.Attribute attribute = 1; // Game attributes to be processed.
+  bgs.protocol.ProcessId host = 2;               // Host process making the request.
+  bgs.protocol.EntityId account_id = 3;          // The player account id.
+  bgs.protocol.EntityId game_account_id = 4;     // The specific game account id.
+  uint32 program = 5;                            // Program identifier (usually a game).
+  ClientInfo client_info = 6;                    // Extra client information.
+}
+
+// Response returned for a ClientRequest.
+message ClientResponse {
+  repeated bgs.protocol.Attribute attribute = 1; // Attributes returned by server.
+}
+
+// Request sent by the server to the client (reverse direction).
+message ServerRequest {
+  repeated bgs.protocol.Attribute attribute = 1; // Attributes the server wishes to process.
+  uint32 program = 2;                            // Program identifier.
+  bgs.protocol.ProcessId host = 3;               // Server host information.
+}
+
+// Response returned for a ServerRequest.
+message ServerResponse {
+  repeated bgs.protocol.Attribute attribute = 1; // Attributes returned from the client.
+}
+
+// Event: Channel for player presence created.
+message PresenceChannelCreatedRequest {
+  bgs.protocol.EntityId id = 1;                  // Entity id of the created channel.
+  bgs.protocol.EntityId game_account_id = 3;     // Related game account id.
+  bgs.protocol.EntityId account_id = 4;          // Parent player account id.
+  bgs.protocol.ProcessId host = 5;               // Host which created the channel.
+}
+
+// Request to retrieve specific player variables.
+message GetPlayerVariablesRequest {
+  repeated PlayerVariables player_variables = 1; // List of required variables.
+  bgs.protocol.ProcessId host = 2;               // Host requesting data.
+}
+
+// Response holding the requested player variables.
+message GetPlayerVariablesResponse {
+  repeated PlayerVariables player_variables = 1; // Fetched player variables.
+}
+
+// Notification: Game account is now online.
+message GameAccountOnlineNotification {
+  bgs.protocol.EntityId game_account_id = 1;     // Game account id that came online.
+  bgs.protocol.ProcessId host = 2;               // Host where account logged in.
+  string session_id = 3;                         // Session identifier.
+}
+
+// Notification: Game account is now offline.
+message GameAccountOfflineNotification {
+  bgs.protocol.EntityId game_account_id = 1;     // Game account id that went offline.
+  bgs.protocol.ProcessId host = 2;               // Host for logout.
+  string session_id = 3;                         // Session identifier.
+}
+
+// Request to obtain achievement file for a player.
+message GetAchievementsFileRequest {
+  bgs.protocol.ProcessId host = 1;               // Host requesting the achievement file.
+}
+
+// Response containing the handle for the achievements file.
+message GetAchievementsFileResponse {
+  bgs.protocol.ContentHandle content_handle = 1; // Returned file handle.
+}
+
+// Request to get all values for a particular attribute.
+message GetAllValuesForAttributeRequest {
+  string attribute_key = 1;                      // Key to fetch all values for.
+  bgs.protocol.EntityId agent_id = 2;            // Entity requesting attribute values.
+  uint32 program = 5;                            // Specific program context.
+}
+
+// Response listing all values for requested attribute.
+message GetAllValuesForAttributeResponse {
+  repeated bgs.protocol.Variant attribute_value = 1; // Found values for the key.
+}
+
+// Main service definition for game utilities, as seen in the generated code.
+service GameUtilitiesService {
+  // Processes a generic client request.
+  rpc ProcessClientRequest(ClientRequest) returns (ClientResponse);
+
+  // Event when a new presence channel is created.
+  rpc PresenceChannelCreated(PresenceChannelCreatedRequest) returns (bgs.protocol.NoData);
+
+  // Get the variables for one or more player(s).
+  rpc GetPlayerVariables(GetPlayerVariablesRequest) returns (GetPlayerVariablesResponse);
+
+  // Processes generic server request.
+  rpc ProcessServerRequest(ServerRequest) returns (ServerResponse);
+
+  // Notification: a game account came online (no response).
+  rpc OnGameAccountOnline(GameAccountOnlineNotification) returns (bgs.protocol.NO_RESPONSE);
+
+  // Notification: a game account went offline (no response).
+  rpc OnGameAccountOffline(GameAccountOfflineNotification) returns (bgs.protocol.NO_RESPONSE);
+
+  // Get achievement file for player.
+  rpc GetAchievementsFile(GetAchievementsFileRequest) returns (GetAchievementsFileResponse);
+
+  // Retrieve all values for the specified attribute key.
+  rpc GetAllValuesForAttribute(GetAllValuesForAttributeRequest) returns (GetAllValuesForAttributeResponse);
+}

@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package bgs.protocol;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "EtsTypesProto";
+option optimize_for = CODE_SIZE;
+
+// Represents a unique identifier for a time series,
+// composed of an epoch and a position.
+message TimeSeriesId {
+  // The epoch for the time series (typically a timestamp or version).
+  uint64 epoch = 1;
+
+  // The position within the epoch or time series (could represent an offset, index, etc.).
+  uint64 position = 2;
+}

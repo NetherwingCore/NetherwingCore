@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package bgs.protocol;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "ContentHandleTypesProto";
+option optimize_for = CODE_SIZE;
+
+// Represents a handle to a specific piece of content.
+// Fields include the content region, usage type, hash, and an optional proto URL.
+message ContentHandle {
+  // Region identifier (e.g., server region or localization)
+  uint32 region = 1;
+
+  // Usage identifier (e.g., how the content is used: type or category)
+  uint32 usage = 2;
+
+  // Content hash for integrity or versioning.
+  bytes hash = 3;
+
+  // Optional URL pointing to protocol or content source.
+  string proto_url = 4;
+}

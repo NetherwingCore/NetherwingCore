@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package bgs.protocol;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "EmbedTypesProto";
+option optimize_for = CODE_SIZE;
+
+// Represents an image used for embed purposes, along with its metadata.
+message EmbedImage {
+  // The URL of the image.
+  string url = 1;
+  // The width of the image, in pixels.
+  uint32 width = 2;
+  // The height of the image, in pixels.
+  uint32 height = 3;
+}
+
+// Represents the provider/source of the embed.
+message Provider {
+  // The name of the provider.
+  string name = 1;
+}
+
+// Contains metadata information for an embed.
+message EmbedInfo {
+  // The title of the embed.
+  string title = 1;
+  // The type of the embed (e.g., image, video, link).
+  string type = 2;
+  // The original URL associated with the embed.
+  string original_url = 3;
+  // The thumbnail image related to the embed.
+  EmbedImage thumbnail = 4;
+  // The provider/source for the embed.
+  Provider provider = 5;
+  // The description for the embed.
+  string description = 6;
+}

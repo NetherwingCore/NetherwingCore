@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package bgs.protocol.club.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "ClubBanProto";
+option optimize_for = CODE_SIZE;
+
+// Provides Ban options and data for Clubs.
+
+// Depends on member proto definitions and attribute types.
+import "br/net/dd/netherwingcore/proto/client/club_member.proto";
+import "br/net/dd/netherwingcore/proto/client/api/client/v2/attribute_types.proto";
+
+// Options for adding a ban to a club.
+message AddBanOptions {
+  // The target member to be banned.
+  MemberId target_id = 1;
+
+  // Additional attributes related to the ban (e.g., metadata, custom info).
+  repeated bgs.protocol.v2.Attribute attribute = 2;
+
+  // The reason for the ban. Used for moderation and audit trails.
+  string reason = 3;
+}
+
+// Represents a Ban within a club.
+message ClubBan {
+  // MemberId of banned user.
+  MemberId id = 1;
+
+  // Battle.net tag of banned user for display/reference.
+  string battle_tag = 2;
+
+  // Description of the user who performed the ban.
+  MemberDescription creator = 3;
+
+  // Custom attributes attached to the ban (categories, flags, etc).
+  repeated bgs.protocol.v2.Attribute attribute = 4;
+
+  // Reason for the ban, as presented by moderator.
+  string reason = 5;
+
+  // Time when the ban was created (Unix timestamp, milliseconds).
+  uint64 creation_time = 6;
+}

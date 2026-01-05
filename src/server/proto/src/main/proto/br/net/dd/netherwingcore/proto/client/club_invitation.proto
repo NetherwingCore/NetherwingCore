@@ -1,0 +1,161 @@
+syntax = "proto3";
+
+package bgs.protocol.club.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "ClubInvitationProto";
+option optimize_for = CODE_SIZE;
+
+import "br/net/dd/netherwingcore/proto/client/club_core.proto";
+import "br/net/dd/netherwingcore/proto/client/club_member.proto";
+import "br/net/dd/netherwingcore/proto/client/api/client/v2/attribute_types.proto";
+
+/**
+ * Represents a club slot with a specific role and default stream.
+ */
+message ClubSlot {
+  // Role identifier for the slot
+  uint32 role = 1;
+
+  // Default stream ID associated with this slot
+  uint64 default_stream_id = 2;
+}
+
+/**
+ * Options for sending a club invitation.
+ */
+message SendInvitationOptions {
+  // Target member to invite
+  MemberId target_id = 1;
+
+  // Slot information for the invitation
+  ClubSlot slot = 2;
+
+  // Additional attributes for the invitation
+  repeated bgs.protocol.v2.Attribute attribute = 3;
+}
+
+/**
+ * Represents a club invitation.
+ */
+message ClubInvitation {
+  // Unique identifier for the invitation
+  uint64 id = 1;
+
+  // Member description of the inviter
+  MemberDescription inviter = 2;
+
+  // Member description of the invitee
+  MemberDescription invitee = 3;
+
+  // Description of the target club
+  ClubDescription club = 4;
+
+  // Slot data used for the invitation
+  ClubSlot slot = 5;
+
+  // Attributes associated with the invitation
+  repeated bgs.protocol.v2.Attribute attribute = 6;
+
+  // When the invitation was created (timestamp)
+  uint64 creation_time = 7;
+
+  // When the invitation expires (timestamp)
+  uint64 expiration_time = 8;
+
+  // Member description of the suggester (if the invitation is a suggestion)
+  MemberDescription suggester = 9;
+}
+
+/**
+ * Options for sending a club suggestion.
+ */
+message SendSuggestionOptions {
+  // Target member for suggestion
+  MemberId target_id = 1;
+
+  // Slot info for the suggestion
+  ClubSlot slot = 2;
+
+  // Additional attributes for the suggestion
+  repeated bgs.protocol.v2.Attribute attribute = 3;
+}
+
+/**
+ * Represents a suggestion within a club.
+ */
+message ClubSuggestion {
+  // Unique identifier for the suggestion
+  uint64 id = 1;
+
+  // Club identifier for the suggestion context
+  uint64 club_id = 2;
+
+  // Member who suggested
+  MemberDescription suggester = 3;
+
+  // Member being suggested
+  MemberDescription suggestee = 4;
+
+  // Slot information for the suggestion
+  ClubSlot slot = 5;
+
+  // Attributes for the suggestion
+  repeated bgs.protocol.v2.Attribute attribute = 6;
+
+  // When the suggestion was created (timestamp)
+  uint64 creation_time = 7;
+
+  // When the suggestion expires (timestamp)
+  uint64 expiration_time = 8;
+}
+
+/**
+ * Options for ticket creation in a club.
+ */
+message CreateTicketOptions {
+  // Slot information for the ticket
+  ClubSlot slot = 1;
+
+  // Attributes for the ticket
+  repeated bgs.protocol.v2.Attribute attribute = 2;
+
+  // Maximum allowed redeem count for this ticket
+  uint32 allowed_redeem_count = 3;
+
+  // Expiration time for the ticket (timestamp)
+  uint64 expiration_time = 4;
+}
+
+/**
+ * Represents a ticket for club membership or access.
+ */
+message ClubTicket {
+  // Ticket identifier
+  string id = 1;
+
+  // Member description of the ticket creator
+  MemberDescription creator = 2;
+
+  // Club description related to the ticket
+  ClubDescription club = 3;
+
+  // Slot information for the ticket
+  ClubSlot slot = 4;
+
+  // Attributes attached to the ticket
+  repeated bgs.protocol.v2.Attribute attribute = 5;
+
+  // Current redeem count for the ticket
+  uint32 current_redeem_count = 6;
+
+  // Maximum allowed redemptions of the ticket
+  uint32 allowed_redeem_count = 7;
+
+  // When the ticket was created (timestamp)
+  uint64 creation_time = 8;
+
+  // When the ticket expires (timestamp)
+  uint64 expiration_time = 9;
+}

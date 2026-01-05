@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+// Report Service Protocol Buffer Definitions
+//
+// This file defines request messages and service RPCs for report operations.
+
+package bgs.protocol.report.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "ReportServiceProto";
+option optimize_for = CODE_SIZE;
+
+import "br/net/dd/netherwingcore/proto/client/account_types.proto"; // Contains GameAccountHandle message
+import "br/net/dd/netherwingcore/proto/client/report_types.proto";  // Contains Report and ReportType messages
+import "br/net/dd/netherwingcore/proto/client/rpc_types.proto";     // Contains NoData message
+
+// Request to send a report.
+message SendReportRequest {
+  Report report = 1; // The report to be submitted.
+  uint32 program = 2; // Optional program identifier.
+}
+
+// Request to submit a report for an agent.
+message SubmitReportRequest {
+  bgs.protocol.account.v1.GameAccountHandle agent_id = 1; // Agent/account related to the report.
+  ReportType report_type = 2; // Type/category of the report.
+  uint32 program = 3; // Optional program identifier.
+}
+
+// The report service providing report-related RPC methods.
+service ReportService {
+  // Sends a user report.
+  rpc SendReport (SendReportRequest) returns (bgs.protocol.NoData);
+
+  // Submits a report for a specific agent.
+  rpc SubmitReport (SubmitReportRequest) returns (bgs.protocol.NoData);
+}

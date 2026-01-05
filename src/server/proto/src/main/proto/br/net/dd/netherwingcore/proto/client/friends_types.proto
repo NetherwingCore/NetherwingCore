@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package bgs.protocol.friends.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "FriendsTypesProto";
+option optimize_for = CODE_SIZE;
+
+import "br/net/dd/netherwingcore/proto/client/attribute_types.proto";
+import "br/net/dd/netherwingcore/proto/client/entity_types.proto";
+import "br/net/dd/netherwingcore/proto/client/invitation_types.proto";
+import "br/net/dd/netherwingcore/proto/client/role_types.proto";
+
+// Represents a friend entity and its attributes.
+message Friend {
+  bgs.protocol.EntityId account_id = 1;
+  repeated bgs.protocol.Attribute attribute = 2;
+  repeated uint32 role = 3; // List of role identifiers.
+  uint64 privileges = 4;
+  uint64 attributes_epoch = 5 [deprecated=true]; // Deprecated: epoch for attributes.
+  uint64 creation_time = 6; // Friend relationship creation unix epoch.
+}
+
+// Represents a friend-of-friend with some public fields.
+message FriendOfFriend {
+  bgs.protocol.EntityId account_id = 1;
+  repeated uint32 role = 3;
+  uint64 privileges = 4;
+  string full_name = 6; // Friend-of-friend's full name.
+  string battle_tag = 7; // Friend-of-friend's battle.net tag.
+}
+
+// Represents an invitation that was received from another user.
+message ReceivedInvitation {
+  uint64 id = 1; // Unique invitation identifier.
+  bgs.protocol.Identity inviter_identity = 2; // Who sent the invitation.
+  bgs.protocol.Identity invitee_identity = 3; // Who receives the invitation.
+  string inviter_name = 4;
+  string invitee_name = 5;
+  string invitation_message = 6;
+  uint64 creation_time = 7;
+  uint64 expiration_time = 8;
+  uint32 program = 9; // Fixed32 mapped to uint32 for proto3
+
+  // Proto3 does not support extensions; place extension fields here if needed.
+  // FriendInvitation friend_invitation = 103; (move to parent message if required)
+}
+
+// Information about a friend invitation.
+message FriendInvitation {
+  repeated uint32 role = 2;
+  repeated bgs.protocol.Attribute attribute = 3;
+}
+
+// Represents an invitation that was sent to another user.
+message SentInvitation {
+  uint64 id = 1;
+  string target_name = 2;
+  uint32 role = 3;
+  repeated bgs.protocol.Attribute attribute = 4;
+  uint64 creation_time = 5;
+  uint32 program = 6; // Fixed32 mapped to uint32 for proto3
+}
+
+// Parameters to create a friend invitation.
+message FriendInvitationParams {
+  string target_email = 1;
+  string target_battle_tag = 2;
+  repeated uint32 role = 6;
+  repeated bgs.protocol.Attribute attribute = 8;
+  string target_name = 9;
+  uint32 program = 10 [deprecated=true];
+}
+
+// Response to a friend subscription/query, contains stats and lists.
+message SubscribeResponse {
+  uint32 max_friends = 1; // Maximum allowed friends.
+  uint32 max_received_invitations = 2; // Maximum received invitations allowed.
+  uint32 max_sent_invitations = 3; // Maximum sent invitations allowed.
+  repeated bgs.protocol.Role role = 4;
+  repeated Friend friends = 5;
+  repeated ReceivedInvitation received_invitations = 7;
+  repeated SentInvitation sent_invitations = 8;
+}
+
+// Options for accepting a friend invitation.
+message AcceptInvitationOptions {
+  uint32 role = 1;
+  uint32 program = 2; // Fixed32 mapped to uint32 for proto3
+}

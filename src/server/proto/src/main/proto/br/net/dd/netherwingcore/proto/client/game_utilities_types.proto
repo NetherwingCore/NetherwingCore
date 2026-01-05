@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package bgs.protocol.game_utilities.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "GameUtilitiesTypesProto";
+option optimize_for = CODE_SIZE;
+
+// Defines protocol types for game utilities in NetherCore.
+// Import dependencies for attributes and entities.
+import "br/net/dd/netherwingcore/proto/client/attribute_types.proto";
+import "br/net/dd/netherwingcore/proto/client/entity_types.proto";
+
+// Represents variables specific to a player in the game.
+message PlayerVariables {
+  // The identity of the player.
+  // Required in proto2, but in proto3 all fields are optional by default.
+  bgs.protocol.Identity identity = 1;
+
+  // Player's rating (skill, ranking, etc.).
+  double rating = 2;
+
+  // List of player-specific attributes.
+  repeated bgs.protocol.Attribute attribute = 3;
+}
+
+// Contains information about the game client.
+message ClientInfo {
+  // Address of the client (IP or network identifier).
+  string client_address = 1;
+
+  // Whether the client is on a privileged (trusted) network.
+  bool privileged_network = 2;
+}

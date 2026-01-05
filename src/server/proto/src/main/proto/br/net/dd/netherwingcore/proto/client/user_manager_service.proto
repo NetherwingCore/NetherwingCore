@@ -1,0 +1,128 @@
+syntax = "proto3";
+
+package bgs.protocol.user_manager.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "UserManagerServiceProto";
+option optimize_for = CODE_SIZE;
+
+import "br/net/dd/netherwingcore/proto/client/user_manager_types.proto";
+import "br/net/dd/netherwingcore/proto/client/entity_types.proto";
+import "br/net/dd/netherwingcore/proto/client/role_types.proto";
+import "br/net/dd/netherwingcore/proto/client/rpc_types.proto";
+
+// Request to subscribe to user manager service updates.
+message SubscribeRequest {
+  // Entity requesting subscription.
+  bgs.protocol.EntityId agent_id = 1;
+  // The object or resource to subscribe to.
+  uint64 object_id = 2;
+}
+
+// Response with user manager info upon subscription.
+message SubscribeResponse {
+  // List of blocked players.
+  repeated BlockedPlayer blocked_players = 1;
+  // List of recently interacted players.
+  repeated RecentPlayer recent_players = 2;
+  // Roles associated with the subscription.
+  repeated bgs.protocol.Role role = 3;
+}
+
+// Request to unsubscribe from user manager service updates.
+message UnsubscribeRequest {
+  bgs.protocol.EntityId agent_id = 1;
+  uint64 object_id = 2;
+}
+
+// Adds recent players for a given agent/program.
+message AddRecentPlayersRequest {
+  // Players recently interacted with.
+  repeated RecentPlayer players = 1;
+  bgs.protocol.EntityId agent_id = 2;
+  uint32 program = 3;
+}
+
+// Clears recent players for an agent/program.
+message ClearRecentPlayersRequest {
+  bgs.protocol.EntityId agent_id = 1;
+  uint32 program = 2;
+}
+
+// Requests to block a player.
+message BlockPlayerRequest {
+  bgs.protocol.EntityId agent_id = 1;
+  bgs.protocol.EntityId target_id = 2; // Player to block.
+  uint32 role = 3;
+}
+
+// Requests to unblock a player.
+message UnblockPlayerRequest {
+  bgs.protocol.EntityId agent_id = 1;
+  bgs.protocol.EntityId target_id = 2; // Player to unblock.
+}
+
+// Notification: blocked player was added.
+message BlockedPlayerAddedNotification {
+  BlockedPlayer player = 1;
+  bgs.protocol.EntityId game_account_id = 2;
+  bgs.protocol.EntityId account_id = 3;
+}
+
+// Notification: blocked player was removed.
+message BlockedPlayerRemovedNotification {
+  BlockedPlayer player = 1;
+  bgs.protocol.EntityId game_account_id = 2;
+  bgs.protocol.EntityId account_id = 3;
+}
+
+// Notification: recent players were added.
+message RecentPlayersAddedNotification {
+  repeated RecentPlayer player = 1;
+}
+
+// Notification: recent players were removed.
+message RecentPlayersRemovedNotification {
+  repeated RecentPlayer player = 1;
+}
+
+// User manager service definition for client-server RPC.
+service UserManagerService {
+  // Subscribe to updates.
+  rpc Subscribe (SubscribeRequest) returns (SubscribeResponse);
+
+  // Add recent players.
+  rpc AddRecentPlayers (AddRecentPlayersRequest) returns (bgs.protocol.NoData);
+
+  // Clear recent players.
+  rpc ClearRecentPlayers (ClearRecentPlayersRequest) returns (bgs.protocol.NoData);
+
+  // Block a player.
+  rpc BlockPlayer (BlockPlayerRequest) returns (bgs.protocol.NoData);
+
+  // Unblock a player.
+  rpc UnblockPlayer (UnblockPlayerRequest) returns (bgs.protocol.NoData);
+
+  // Block a player for the session.
+  rpc BlockPlayerForSession (BlockPlayerRequest) returns (bgs.protocol.NoData);
+
+  // Unsubscribe from updates.
+  rpc Unsubscribe (UnsubscribeRequest) returns (bgs.protocol.NoData);
+}
+
+// Listener service for server-side notifications regarding user management actions.
+// This should be implemented by clients if they want to receive push notifications.
+service UserManagerListener {
+  // Notification: a blocked player was added.
+  rpc OnBlockedPlayerAdded (BlockedPlayerAddedNotification) returns (bgs.protocol.NO_RESPONSE);
+
+  // Notification: a blocked player was removed.
+  rpc OnBlockedPlayerRemoved (BlockedPlayerRemovedNotification) returns (bgs.protocol.NO_RESPONSE);
+
+  // Notification: recent players were added.
+  rpc OnRecentPlayersAdded (RecentPlayersAddedNotification) returns (bgs.protocol.NO_RESPONSE);
+
+  // Notification: recent players were removed.
+  rpc OnRecentPlayersRemoved (RecentPlayersRemovedNotification) returns (bgs.protocol.NO_RESPONSE);
+}

@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package bgs.protocol.profanity.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "ProfanityFilterConfigProto";
+option optimize_for = CODE_SIZE;
+
+// Represents a single filter used for profanity detection.
+// Each filter consists of a type and a regular expression.
+message WordFilter {
+  // Type of filter (e.g., "strict", "lenient").
+  string type = 1;
+
+  // Regex pattern that defines the profanity to filter.
+  string regex = 2;
+}
+
+// Represents a collection of WordFilter objects.
+// Used to manage multiple profanity filters together.
+message WordFilters {
+  // List of filters.
+  repeated WordFilter filters = 1;
+}

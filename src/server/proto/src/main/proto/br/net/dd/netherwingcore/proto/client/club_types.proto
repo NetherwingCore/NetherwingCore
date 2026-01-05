@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package bgs.protocol.club.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "ClubTypesProto";
+option optimize_for = CODE_SIZE;
+
+// This file serves as a central import point for all Club Protocol types.
+// It aggregates related types for club feature implementation.
+// No additional messages or enums are defined directly here.
+
+// Membership, role, and enum types
+import "br/net/dd/netherwingcore/proto/client/club_membership_types.proto";
+import "br/net/dd/netherwingcore/proto/client/club_enum.proto";
+import "br/net/dd/netherwingcore/proto/client/club_role.proto";
+
+// Range sets and core club definitions
+import "br/net/dd/netherwingcore/proto/client/club_range_set.proto";
+import "br/net/dd/netherwingcore/proto/client/club_core.proto";
+
+// Member management types
+import "br/net/dd/netherwingcore/proto/client/club_member.proto";
+import "br/net/dd/netherwingcore/proto/client/club_invitation.proto";
+import "br/net/dd/netherwingcore/proto/client/club_ban.proto";
+import "br/net/dd/netherwingcore/proto/client/club_stream.proto";
+
+// External dependencies
+import "br/net/dd/netherwingcore/proto/client/api/client/v2/attribute_types.proto";
+import "br/net/dd/netherwingcore/proto/client/account_types.proto";
+import "br/net/dd/netherwingcore/proto/client/event_view_types.proto";
+import "br/net/dd/netherwingcore/proto/client/invitation_types.proto";
+import "br/net/dd/netherwingcore/proto/client/message_types.proto";
+import "br/net/dd/netherwingcore/proto/client/ets_types.proto";
+import "br/net/dd/netherwingcore/proto/client/voice_types.proto";
+import "br/net/dd/netherwingcore/proto/client/rpc_types.proto";
+
+// You may add custom messages below if needed.
+// message ExampleMessage {
+//     // Write fields and comments here
+// }

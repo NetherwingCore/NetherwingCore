@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+package JSON.RealmList;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.realmlist";
+option java_outer_classname = "RealmListProto";
+option optimize_for = CODE_SIZE;
+
+message RealmListTicketIdentity {
+  uint32 gameAccountID = 1;
+  uint32 gameAccountRegion = 2;
+}
+
+message ClientVersion {
+  uint32 versionMajor = 1;
+  uint32 versionMinor = 2;
+  uint32 versionRevision = 3;
+  uint32 versionBuild = 4;
+}
+
+message ClientInformation {
+  uint32 platform = 1;
+  string buildVariant = 2;
+  uint32 type = 3;
+  string timeZone = 4;
+  uint32 currentTime = 5;
+  uint32 textLocale = 6;
+  uint32 audioLocale = 7;
+  uint32 versionDataBuild = 8;
+  ClientVersion version = 9;
+  bytes secret = 10;
+  uint32 clientArch = 11;
+  string systemVersion = 12;
+  uint32 platformType = 13;
+  uint32 systemArch = 14;
+}
+
+message RealmListTicketClientInformation {
+  ClientInformation info = 1;
+}
+
+message RealmCharacterCountEntry {
+  uint32 wowRealmAddress = 1;
+  uint32 count = 2;
+}
+
+message RealmCharacterCountList {
+  repeated RealmCharacterCountEntry counts = 1;
+}
+
+message RealmEntry {
+  uint32 wowRealmAddress = 1;
+  uint32 cfgTimezonesID = 2;
+  uint32 populationState = 3;
+  uint32 cfgCategoriesID = 4;
+  ClientVersion version = 5;
+  uint32 cfgRealmsID = 6;
+  uint32 flags = 7;
+  string name = 8;
+  uint32 cfgConfigsID = 9;
+  uint32 cfgLanguagesID = 10;
+}
+
+message RealmState {
+  RealmEntry update = 1;
+  bool deleting = 2;
+}
+
+message RealmListUpdates {
+  repeated RealmState updates = 1;
+}
+
+message IPAddress {
+  string ip = 1;
+  uint32 port = 2;
+}
+
+message RealmIPAddressFamily {
+  uint32 family = 1;
+  repeated IPAddress addresses = 2;
+}
+
+message RealmListServerIPAddresses {
+  repeated RealmIPAddressFamily families = 1;
+}

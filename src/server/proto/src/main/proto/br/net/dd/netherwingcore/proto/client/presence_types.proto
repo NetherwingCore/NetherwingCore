@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+package bgs.protocol.presence.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "PresenceTypesProto";
+option optimize_for = CODE_SIZE;
+
+import "br/net/dd/netherwingcore/proto/client/attribute_types.proto";
+import "br/net/dd/netherwingcore/proto/client/entity_types.proto";
+import "br/net/dd/netherwingcore/proto/client/channel_types.proto";
+
+// Represents a key for localization of Rich Presence messages.
+message RichPresenceLocalizationKey {
+  // Program identifier
+  uint32 program = 1;
+
+  // Stream identifier
+  uint32 stream = 2;
+
+  // Localization identifier
+  uint32 localization_id = 3;
+}
+
+// Represents a unique key for a presence field.
+message FieldKey {
+  // Program identifier
+  uint32 program = 1;
+
+  // Group identifier
+  uint32 group = 2;
+
+  // Field identifier
+  uint32 field = 3;
+
+  // Unique field id (default: 0)
+  uint64 unique_id = 4;
+}
+
+// Represents a presence field with its key and value.
+message Field {
+  // The key describing the field
+  FieldKey key = 1;
+
+  // The value of the field
+  bgs.protocol.Variant value = 2;
+}
+
+// Represents an operation on a field (set or clear).
+message FieldOperation {
+  // The field to operate on
+  Field field = 1;
+
+  // Type of operation, defaults to SET
+  OperationType operation = 2;
+
+  // Specifies the type of field operation.
+  enum OperationType {
+    SET = 0;
+    CLEAR = 1;
+  }
+}
+
+// Represents the presence state of an entity.
+message PresenceState {
+  // Entity identifier
+  bgs.protocol.EntityId entity_id = 1;
+
+  // List of field operations to apply
+  repeated FieldOperation field_operation = 2;
+}
+
+// Represents the presence state of a channel, including healing status.
+message ChannelState {
+  // Entity identifier for the channel
+  bgs.protocol.EntityId entity_id = 1;
+
+  // List of field operations to apply on the channel
+  repeated FieldOperation field_operation = 2;
+
+  // Healing state of the channel (default: false)
+  bool healing = 3;
+}
+
+// Extends ChannelState from channel_types.proto to include channel presence state.
+// Note: proto3 supports extensions only for custom options, so in generated code this may not work as previously.
+//extend bgs.protocol.channel.v1.ChannelState {
+//  ChannelState presence = 101;
+//}

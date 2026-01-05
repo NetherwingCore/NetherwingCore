@@ -1,0 +1,108 @@
+syntax = "proto3";
+
+// Membership service for BGS clubs.
+// This describes the RPC interface for managing club memberships.
+
+package bgs.protocol.club.v1.membership;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "ClubMembershipServiceProto";
+option optimize_for = CODE_SIZE;
+
+// Import club types and stream types from other proto files.
+import "br/net/dd/netherwingcore/proto/client/account_types.proto";
+import "br/net/dd/netherwingcore/proto/client/club_membership_types.proto";
+import "br/net/dd/netherwingcore/proto/client/event_view_types.proto";
+import "br/net/dd/netherwingcore/proto/client/ets_types.proto";
+import "br/net/dd/netherwingcore/proto/client/rpc_types.proto";
+import "br/net/dd/netherwingcore/proto/client/club_stream.proto";
+
+// Subscribe to club membership events.
+message SubscribeRequest {
+  // The account that is subscribing.
+  bgs.protocol.account.v1.AccountId agent_id = 1;
+}
+
+message SubscribeResponse {
+  // Current membership state for the agent.
+  bgs.protocol.club.v1.ClubMembershipState state = 1;
+}
+
+// Unsubscribe from club membership events.
+message UnsubscribeRequest {
+  // The account that is unsubscribing.
+  bgs.protocol.account.v1.AccountId agent_id = 1;
+}
+
+// Request current state for membership.
+message GetStateRequest {
+  // The account whose membership state is being requested.
+  bgs.protocol.account.v1.AccountId agent_id = 1;
+}
+
+message GetStateResponse {
+  // The current membership state.
+  bgs.protocol.club.v1.ClubMembershipState state = 1;
+}
+
+// Update shared club settings.
+message UpdateClubSharedSettingsRequest {
+  // The account updating settings.
+  bgs.protocol.account.v1.AccountId agent_id = 1;
+  // The options for shared settings update.
+  bgs.protocol.club.v1.ClubSharedSettingsOptions options = 2;
+}
+
+// Request mentions in club stream.
+message GetStreamMentionsRequest {
+  // The account requesting mentions.
+  bgs.protocol.account.v1.AccountId agent_id = 1;
+  // Options for event retrieval.
+  bgs.protocol.GetEventOptions options = 2;
+}
+
+message GetStreamMentionsResponse {
+  // Returned list of stream mentions.
+  repeated bgs.protocol.club.v1.StreamMention mention = 1;
+  // Continuation token for paged responses.
+  uint64 continuation = 2;
+}
+
+// Remove mentions from the club stream.
+message RemoveStreamMentionsRequest {
+  // The account requesting removal.
+  bgs.protocol.account.v1.AccountId agent_id = 1;
+  // List of mention IDs to remove.
+  repeated bgs.protocol.TimeSeriesId mention_id = 2;
+}
+
+// Advance the view time for stream mentions.
+message AdvanceStreamMentionViewTimeRequest {
+  // The account for which view time is advanced.
+  bgs.protocol.account.v1.AccountId agent_id = 1;
+}
+
+// Club Membership Service definition
+service ClubMembershipService {
+  // Subscribe to club membership notifications.
+  rpc Subscribe(SubscribeRequest) returns (SubscribeResponse);
+
+  // Unsubscribe from club membership notifications.
+  rpc Unsubscribe(UnsubscribeRequest) returns (bgs.protocol.NoData);
+
+  // Get the current state of the club membership.
+  rpc GetState(GetStateRequest) returns (GetStateResponse);
+
+  // Update the shared settings of the club.
+  rpc UpdateClubSharedSettings(UpdateClubSharedSettingsRequest) returns (bgs.protocol.NoData);
+
+  // Get stream mentions for the club.
+  rpc GetStreamMentions(GetStreamMentionsRequest) returns (GetStreamMentionsResponse);
+
+  // Remove specific stream mentions.
+  rpc RemoveStreamMentions(RemoveStreamMentionsRequest) returns (bgs.protocol.NoData);
+
+  // Advance the view time for stream mentions.
+  rpc AdvanceStreamMentionViewTime(AdvanceStreamMentionViewTimeRequest) returns (bgs.protocol.NoData);
+}

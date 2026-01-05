@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package bgs.protocol.report.v2;
+
+option java_package = "br.net.dd.netherwingcore.proto.client.api.client.v2";
+option java_outer_classname = "ReportServiceProto";
+option optimize_for = CODE_SIZE;
+
+import "br/net/dd/netherwingcore/proto/client/account_types.proto";
+import "br/net/dd/netherwingcore/proto/client/api/client/v2/report_types.proto";
+import "br/net/dd/netherwingcore/proto/client/rpc_types.proto";
+
+message SubmitReportRequest {
+  bgs.protocol.account.v1.AccountId agent_id = 1;
+  string user_description = 2;
+  uint32 program = 3;
+
+  oneof type {
+    bgs.protocol.report.v2.UserOptions user_options = 10;
+    bgs.protocol.report.v2.ClubOptions club_options = 11;
+  }
+}
+
+service ReportService {
+  rpc SubmitReport(SubmitReportRequest) returns (bgs.protocol.NoData);
+}

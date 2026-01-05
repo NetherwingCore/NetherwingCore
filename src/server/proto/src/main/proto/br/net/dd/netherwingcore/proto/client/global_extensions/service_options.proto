@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package bgs.protocol;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client.global_extensions";
+option java_outer_classname = "ServiceOptionsProto";
+option optimize_for = CODE_SIZE;
+
+// Message for BGS service options
+message BGSServiceOptions {
+  string descriptor_name = 1;
+  uint32 version = 4;
+  string shard_name = 5;
+}
+
+// Message for SDK service options
+message SDKServiceOptions {
+  bool inbound = 1;
+  bool outbound = 2;
+  bool use_client_id = 3;
+}

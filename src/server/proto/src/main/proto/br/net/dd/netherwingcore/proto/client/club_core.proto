@@ -1,0 +1,142 @@
+syntax = "proto3";
+
+package bgs.protocol.club.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "ClubCoreProto";
+option optimize_for = CODE_SIZE;
+
+// Importing dependent proto files
+import "br/net/dd/netherwingcore/proto/client/club_enum.proto";
+import "br/net/dd/netherwingcore/proto/client/club_role.proto";
+import "br/net/dd/netherwingcore/proto/client/club_member.proto";
+import "br/net/dd/netherwingcore/proto/client/club_stream.proto";
+import "br/net/dd/netherwingcore/proto/client/api/client/v2/attribute_types.proto";
+import "br/net/dd/netherwingcore/proto/client/event_view_types.proto";
+
+// Message containing an avatar ID.
+message AvatarId {
+  uint32 id = 1; // Unique identifier for the avatar.
+}
+
+// Options for setting a broadcast message.
+message SetBroadcastOptions {
+  string content = 1; // Content of the broadcast.
+}
+
+// A broadcast within the club.
+message Broadcast {
+  string content = 1; // Main broadcast message content.
+  MemberDescription creator = 2; // Who created the broadcast.
+  uint64 creation_time = 3; // Broadcast creation timestamp (epoch).
+}
+
+// Uniquely identifies a specific club type.
+message UniqueClubType {
+  fixed32 program = 1; // Program code.
+  string name = 2; // Club type name.
+}
+
+// Options for club creation.
+message ClubCreateOptions {
+  UniqueClubType type = 1; // Type of the club.
+  repeated bgs.protocol.v2.Attribute attribute = 2; // Extra attributes.
+  string name = 3; // Club name.
+  string description = 4; // Club description.
+  AvatarId avatar = 5; // Club avatar.
+  PrivacyLevel privacy_level = 6; // Club privacy setting.
+  string short_name = 7; // Shorthand club name.
+  CreateMemberOptions member = 10; // Initial member options.
+  CreateStreamOptions stream = 11; // Initial stream options.
+}
+
+// Club data representation.
+message Club {
+  uint64 id = 1; // Club unique identifier.
+  UniqueClubType type = 2; // Main club type.
+  repeated bgs.protocol.v2.Attribute attribute = 3; // Attributes set on the club.
+  string name = 4; // Club name.
+  string description = 5; // Club description.
+  Broadcast broadcast = 6; // Broadcast message for the club.
+  AvatarId avatar = 7; // Club avatar.
+  PrivacyLevel privacy_level = 8; // Privacy setting.
+  VisibilityLevel visibility_level = 9; // Club visibility setting.
+  uint32 member_count = 10; // Current total member count.
+  uint64 creation_time = 11; // Club creation timestamp.
+  StreamPosition stream_position = 12; // Current stream position.
+  ClubRoleSet role_set = 13; // Set of roles associated.
+  repeated MemberDescription leader = 14; // Description of club leaders.
+  string short_name = 15; // Short name.
+}
+
+// Only describes the club (summary).
+message ClubDescription {
+  uint64 id = 1; // Club identifier.
+  UniqueClubType type = 2;
+  string name = 3;
+  string description = 4;
+  AvatarId avatar = 5;
+  PrivacyLevel privacy_level = 6;
+  VisibilityLevel visibility_level = 7;
+  uint32 member_count = 8;
+  repeated MemberDescription leader = 9;
+  uint64 creation_time = 10;
+}
+
+// Marker for viewing a club.
+message ClubView {
+  uint64 club_id = 1; // The ID of the club being viewed.
+  bgs.protocol.ViewMarker marker = 2; // Marker for pagination or event views.
+}
+
+// Options to update club state.
+message ClubStateOptions {
+  repeated bgs.protocol.v2.Attribute attribute = 1; // State attributes.
+  string name = 2;
+  string description = 3;
+  SetBroadcastOptions broadcast = 4;
+  AvatarId avatar = 5;
+  PrivacyLevel privacy_level = 6;
+  StreamPosition stream_position = 7;
+  string short_name = 8;
+}
+
+// Assignment of state to a club.
+message ClubStateAssignment {
+  uint64 club_id = 1; // Assigned club ID.
+  repeated bgs.protocol.v2.Attribute attribute = 2;
+  string name = 3;
+  string description = 4;
+  Broadcast broadcast = 5;
+  AvatarId avatar = 6;
+  PrivacyLevel privacy_level = 7;
+  StreamPosition stream_position = 8;
+  string short_name = 9;
+}
+
+// Settings for a specific stream.
+message StreamSettings {
+  uint64 stream_id = 1; // ID for the stream.
+  StreamNotificationFilter filter = 2; // Filter applied to notifications.
+}
+
+// Club settings header.
+message ClubSettings {
+  repeated StreamSettings stream = 1; // List of club streams.
+  bool stream_notification_filter_all = 2; // Notify for all stream events.
+  repeated bgs.protocol.v2.Attribute attribute = 3; // Club attributes.
+}
+
+// Settings options for a club (including deprecated streams).
+message ClubSettingsOptions {
+  repeated StreamSettings stream = 1 [deprecated = true]; // Deprecated usage.
+  ClubSettings settings = 2; // Latest club settings.
+  uint32 version = 3; // Version of settings.
+}
+
+// Assign new settings to a club.
+message ClubSettingsAssignment {
+  repeated StreamSettings stream = 1 [deprecated = true];
+  ClubSettings settings = 2;
+}

@@ -1,0 +1,118 @@
+syntax = "proto3";
+
+package bgs.protocol.presence.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "PresenceServiceProto";
+option optimize_for = CODE_SIZE;
+
+import "br/net/dd/netherwingcore/proto/client/entity_types.proto";         // defines EntityId
+import "br/net/dd/netherwingcore/proto/client/presence_types.proto";       // defines Field, FieldKey, FieldOperation
+import "br/net/dd/netherwingcore/proto/client/rpc_types.proto";            // defines NoData
+
+// Request for subscribing to presence notifications for a specific entity.
+message SubscribeRequest {
+  bgs.protocol.EntityId agent_id = 1;              // Agent making the request
+  bgs.protocol.EntityId entity_id = 2;             // Target entity to subscribe to
+  uint64 object_id = 3;                            // Object ID to identify the subscription
+  repeated fixed32 program = 4;                    // Program-related metadata
+  repeated FieldKey key = 6;                       // Field keys of interest
+}
+
+// Request for subscribing to notifications for an entity.
+message SubscribeNotificationRequest {
+  bgs.protocol.EntityId entity_id = 1;             // Target entity for notifications
+}
+
+// Request for unsubscribing from presence notifications.
+message UnsubscribeRequest {
+  bgs.protocol.EntityId agent_id = 1;              // Agent making the request
+  bgs.protocol.EntityId entity_id = 2;             // Target entity to unsubscribe from
+  uint64 object_id = 3;                            // Object ID of the subscription
+}
+
+// Request for updating presence fields for an entity.
+message UpdateRequest {
+  bgs.protocol.EntityId entity_id = 1;             // Target entity to update
+  repeated FieldOperation field_operation = 2;     // Field operations to apply
+  bool no_create = 3;                              // If true, entity cannot be created
+  bgs.protocol.EntityId agent_id = 4;              // Agent making the request
+}
+
+// Request for querying the presence fields of an entity.
+message QueryRequest {
+  bgs.protocol.EntityId entity_id = 1;             // Entity to query
+  repeated FieldKey key = 2;                       // Keys to query
+  bgs.protocol.EntityId agent_id = 3;              // Agent making the request
+}
+
+// Response for a presence query.
+message QueryResponse {
+  repeated Field field = 2;                        // List of fields with values
+}
+
+// Request for taking or releasing presence ownership of an entity.
+message OwnershipRequest {
+  bgs.protocol.EntityId entity_id = 1;             // Entity target
+  bool release_ownership = 2;                      // If true, release ownership
+}
+
+// Request for subscribing to multiple entities at once.
+message BatchSubscribeRequest {
+  bgs.protocol.EntityId agent_id = 1;              // Agent making request
+  repeated bgs.protocol.EntityId entity_id = 2;    // List of entities to subscribe to
+  repeated fixed32 program = 3;                    // Program-related metadata
+  repeated FieldKey key = 4;                       // Field keys of interest
+  uint64 object_id = 5;                            // Object ID for batch operation
+}
+
+// Represents the result of a subscribe operation for one entity in a batch.
+message SubscribeResult {
+  bgs.protocol.EntityId entity_id = 1;             // Entity involved in subscribe
+  uint32 result = 2;                               // Result code (success/failure)
+}
+
+// Response for a batch subscribe operation.
+message BatchSubscribeResponse {
+  repeated SubscribeResult subscribe_failed = 1;   // Entities for which subscription failed
+}
+
+// Request for batch unsubscription.
+message BatchUnsubscribeRequest {
+  bgs.protocol.EntityId agent_id = 1;              // Agent making request
+  repeated bgs.protocol.EntityId entity_id = 2;    // List of entities to unsubscribe
+  uint64 object_id = 3;                            // Object ID for batch operation
+}
+
+
+/*
+  PresenceService defines RPC operations for managing and observing presence status.
+  Method indices are kept in sync with implementation for routing.
+*/
+
+service PresenceService {
+  // Subscribe to presence updates for an entity.
+  rpc Subscribe(SubscribeRequest) returns (bgs.protocol.NoData);
+
+  // Unsubscribe from presence updates of an entity.
+  rpc Unsubscribe(UnsubscribeRequest) returns (bgs.protocol.NoData);
+
+  // Update presence fields for an entity.
+  rpc Update(UpdateRequest) returns (bgs.protocol.NoData);
+
+  // Query presence fields for an entity.
+  rpc Query(QueryRequest) returns (QueryResponse);
+
+  // Take or release ownership of presence for an entity.
+  rpc Ownership(OwnershipRequest) returns (bgs.protocol.NoData);
+
+  // Subscribe for notifications for an entity.
+  rpc SubscribeNotification(SubscribeNotificationRequest) returns (bgs.protocol.NoData);
+
+  // Subscribe to presence for multiple entities.
+  rpc BatchSubscribe(BatchSubscribeRequest) returns (BatchSubscribeResponse);
+
+  // Unsubscribe from presence for multiple entities.
+  rpc BatchUnsubscribe(BatchUnsubscribeRequest) returns (bgs.protocol.NoData);
+}

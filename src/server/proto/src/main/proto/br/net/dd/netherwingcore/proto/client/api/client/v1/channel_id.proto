@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package bgs.protocol.channel.v1;
+
+option java_package = "br.net.dd.netherwingcore.proto.client.api.client.v1";
+option java_outer_classname = "ChannelIdProto";
+option optimize_for = CODE_SIZE;
+
+import "br/net/dd/netherwingcore/proto/client/rpc_types.proto";
+
+message ChannelId {
+  uint32 type = 1;
+  bgs.protocol.ProcessId host = 2;
+  fixed32 id = 3;
+}

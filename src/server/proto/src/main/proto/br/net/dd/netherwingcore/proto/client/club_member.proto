@@ -1,0 +1,124 @@
+syntax = "proto3";
+
+package bgs.protocol.club.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "ClubMemberProto";
+option optimize_for = CODE_SIZE;
+
+// Import other proto definitions required for references.
+import "br/net/dd/netherwingcore/proto/client/api/client/v2/attribute_types.proto";  // For Attribute
+import "br/net/dd/netherwingcore/proto/client/account_types.proto";                  // For AccountId
+import "br/net/dd/netherwingcore/proto/client/club_enum.proto";                      // For enums: PresenceLevel, WhisperLevel, ClubRemovedReason, VoiceMicrophoneState
+
+// Unique identifier for a club member.
+message MemberId {
+  bgs.protocol.account.v1.AccountId account_id = 1;
+  uint64 unique_id = 2;
+}
+
+// Complete information about a club member.
+message Member {
+  MemberId id = 1;
+  string battle_tag = 2;
+  repeated uint32 role = 3; // Roles assigned to the member.
+  repeated bgs.protocol.v2.Attribute attribute = 4; // List of custom attributes for a member.
+  uint64 join_time = 5; // Timestamp the member joined.
+  PresenceLevel presence_level = 6;
+  bool moderator_mute = 7;
+  WhisperLevel whisper_level = 8;
+  string note = 9;
+  bool active = 50;
+  MemberVoiceState voice = 51;
+}
+
+// Result of an operation involving a member.
+message MemberResult {
+  MemberId member_id = 1;
+  uint32 status = 2;
+}
+
+// Options used to remove a member from a club.
+message RemoveMemberOptions {
+  MemberId id = 1;
+  ClubRemovedReason reason = 2;
+}
+
+// Assignment recording that a member was removed.
+message MemberRemovedAssignment {
+  MemberId id = 1;
+  ClubRemovedReason reason = 2;
+}
+
+// Voice options for a club member.
+message MemberVoiceOptions {
+  uint64 stream_id = 1;
+  bool joined = 2;
+  VoiceMicrophoneState microphone = 3;
+  bool active = 4;
+}
+
+// Voice state for a club member.
+message MemberVoiceState {
+  string id = 1;
+  uint64 stream_id = 2;
+  bool joined = 3;
+  VoiceMicrophoneState microphone = 4;
+  bool active = 5;
+}
+
+// Options used to create a new club member.
+message CreateMemberOptions {
+  MemberId id = 1;
+  repeated bgs.protocol.v2.Attribute attribute = 2;
+}
+
+// Basic description of a club member for displaying or searching.
+message MemberDescription {
+  MemberId id = 1;
+  string battle_tag = 2;
+}
+
+// Role assignment for a member.
+message RoleAssignment {
+  MemberId member_id = 1;
+  repeated uint32 role = 2;
+}
+
+// Attribute assignment for a member.
+message MemberAttributeAssignment {
+  MemberId member_id = 1;
+  repeated bgs.protocol.v2.Attribute attribute = 2;
+}
+
+// Voice state options for a subscriber.
+message SubscriberStateOptions {
+  MemberVoiceOptions voice = 1;
+}
+
+// Subscriber state assignment.
+message SubscriberStateAssignment {
+  MemberId member_id = 1;
+  bool active = 2;
+  MemberVoiceState voice = 3;
+}
+
+// State options for a member (presence, mute, etc).
+message MemberStateOptions {
+  repeated bgs.protocol.v2.Attribute attribute = 1;
+  PresenceLevel presence_level = 2;
+  bool moderator_mute = 3;
+  WhisperLevel whisper_level = 4;
+  string note = 5;
+}
+
+// Assignment of state to a club member.
+message MemberStateAssignment {
+  MemberId member_id = 1;
+  repeated bgs.protocol.v2.Attribute attribute = 2;
+  PresenceLevel presence_level = 3;
+  bool moderator_mute = 4;
+  WhisperLevel whisper_level = 5;
+  string note = 6;
+}

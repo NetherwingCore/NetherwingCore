@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package bgs.protocol;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client.global_extensions";
+option java_outer_classname = "MessageOptionsProto";
+option optimize_for = CODE_SIZE;
+
+import "google/protobuf/descriptor.proto";
+
+message BGSMessageOptions {
+  bool custom_select_shard = 1;
+  bool custom_validator = 2;
+}
+
+// Extension for message options
+extend google.protobuf.MessageOptions {
+  BGSMessageOptions message_options = 90000;
+}

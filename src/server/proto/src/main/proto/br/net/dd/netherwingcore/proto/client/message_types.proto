@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package bgs.protocol;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "MessageTypesProto";
+option optimize_for = CODE_SIZE;
+
+// Message representing a unique identifier using epoch and position
+message MessageId {
+  uint64 epoch = 1;    // The epoch timestamp or logical time
+  uint64 position = 2; // The position or offset indicator
+}
+
+// Enum for typing indicator states
+enum TypingIndicator {
+  TYPING_START = 0; // Indicates typing has started
+  TYPING_STOP  = 1; // Indicates typing has stopped
+}

@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package bgs.protocol.channel.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "ChannelTypesProto";
+option optimize_for = CODE_SIZE;
+
+// Import dependencies
+import "br/net/dd/netherwingcore/proto/client/attribute_types.proto";
+import "br/net/dd/netherwingcore/proto/client/entity_types.proto";
+import "br/net/dd/netherwingcore/proto/client/invitation_types.proto";
+
+// Represents a generic message with multiple attributes.
+message Message {
+  repeated bgs.protocol.Attribute attribute = 1; // Holds message attributes.
+}
+
+// Options for listing channels.
+message ListChannelsOptions {
+  uint32 start_index = 1;             // Pagination start index.
+  uint32 max_results = 2;             // Maximum results per page.
+  string name = 3;                    // Filter by channel name.
+  uint32 program = 4;                 // Associated program code.
+  uint32 locale = 5;                  // Locale/language code.
+  uint32 capacity_full = 6;           // Shows full channels.
+  bgs.protocol.AttributeFilter attribute_filter = 7; // Filter by channel attributes.
+  string channel_type = 8;            // Channel type identifier.
+}
+
+// Describes a channel.
+message ChannelDescription {
+  bgs.protocol.EntityId channel_id = 1;         // Channel unique identifier.
+  uint32 current_members = 2;                   // Current member count.
+  ChannelState state = 3;                       // Current channel state.
+}
+
+// Information about a channel and its members.
+message ChannelInfo {
+  ChannelDescription description = 1;           // Channel description info.
+  repeated Member member = 2;                   // Member list.
+}
+
+// Various states and properties of a channel.
+message ChannelState {
+  uint32 max_members = 1;                       // Maximum number of members allowed.
+  uint32 min_members = 2;                       // Minimum number of members required.
+  repeated bgs.protocol.Attribute attribute = 3;// Channel-level attributes.
+  repeated bgs.protocol.Invitation invitation = 4;// Invitations for the channel.
+  uint32 reason = 6;                            // Reason code for state change.
+  PrivacyLevel privacy_level = 7;               // Channel privacy setting.
+  string name = 8;                              // Channel name.
+  string channel_type = 10;                     // Type of channel.
+  uint32 program = 11;                          // Associated program code.
+  bool subscribe_to_presence = 13;              // Subscribe members to presence.
+
+  // Defines privacy levels for channels.
+  enum PrivacyLevel {
+    PRIVACY_LEVEL_UNDEFINED = 0;             // Undefined privacy level.
+    PRIVACY_LEVEL_OPEN = 1;                     // Channel is open to all.
+    PRIVACY_LEVEL_OPEN_INVITATION_AND_FRIEND = 2; // Open to invitations & friends.
+    PRIVACY_LEVEL_OPEN_INVITATION = 3;          // Open by invitation only.
+    PRIVACY_LEVEL_CLOSED = 4;                   // Closed channel.
+  }
+}
+
+// Information about a member's account.
+message MemberAccountInfo {
+  string battle_tag = 3;                        // User's BattleTag.
+}
+
+// Detailed member state in the channel.
+message MemberState {
+  repeated bgs.protocol.Attribute attribute = 1;// Member-specific attributes.
+  repeated uint32 role = 2;                     // Roles assigned to member.
+  uint64 privileges = 3;                        // Bitfield for privileges.
+  MemberAccountInfo info = 4;                   // Extended account info.
+}
+
+// Represents a channel member.
+message Member {
+  bgs.protocol.Identity identity = 1;           // Member identity info.
+  MemberState state = 2;                        // Current state of the member.
+}

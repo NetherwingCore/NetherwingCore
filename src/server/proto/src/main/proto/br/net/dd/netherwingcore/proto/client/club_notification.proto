@@ -1,0 +1,181 @@
+syntax = "proto3";
+
+package bgs.protocol.club.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "ClubNotificationProto";
+option optimize_for = CODE_SIZE;
+
+// Import supporting types for club-related entities.
+import "br/net/dd/netherwingcore/proto/client/club_member.proto";
+import "br/net/dd/netherwingcore/proto/client/club_core.proto";
+import "br/net/dd/netherwingcore/proto/client/club_stream.proto";
+import "br/net/dd/netherwingcore/proto/client/club_invitation.proto";
+import "br/net/dd/netherwingcore/proto/client/invitation_types.proto";
+
+// SubscribeNotification is sent when a member subscribes to a club.
+message SubscribeNotification {
+  MemberId agent_id = 1; // The agent who initiated the action.
+  MemberId subscriber_id = 2; // The subscribing member.
+  uint64 club_id = 3; // Club unique identifier.
+  Club club = 4; // Details of the club.
+  ClubView view = 5; // Club view information.
+  ClubSettings settings = 10; // Club settings at time of subscription.
+  Member member = 11; // Member information.
+}
+
+// UnsubscribeNotification is sent when a member unsubscribes from a club.
+message UnsubscribeNotification {
+  MemberId agent_id = 1; // The agent who initiated the action.
+  MemberId subscriber_id = 2; // The unsubscribing member.
+  uint64 club_id = 3; // Club unique identifier.
+}
+
+// StateChangedNotification is sent when the club state changes.
+message StateChangedNotification {
+  MemberId agent_id = 1;
+  MemberId subscriber_id = 2;
+  uint64 club_id = 3;
+  ClubStateAssignment assignment = 5; // State assignment description.
+}
+
+// SettingsChangedNotification is sent when club settings change.
+message SettingsChangedNotification {
+  MemberId agent_id = 1;
+  MemberId subscriber_id = 2;
+  uint64 club_id = 3;
+  ClubSettingsAssignment assignment = 4;
+}
+
+// MemberAddedNotification is sent when members are added to a club.
+message MemberAddedNotification {
+  MemberId agent_id = 1;
+  MemberId subscriber_id = 2;
+  uint64 club_id = 3;
+  repeated Member member = 4; // Newly added members.
+}
+
+// MemberRemovedNotification is sent when members are removed from a club.
+message MemberRemovedNotification {
+  MemberId agent_id = 1;
+  MemberId subscriber_id = 2;
+  uint64 club_id = 3;
+  repeated MemberRemovedAssignment member = 4; // Assignment describing removal.
+}
+
+// MemberStateChangedNotification is sent when members' state change.
+message MemberStateChangedNotification {
+  MemberId agent_id = 1;
+  MemberId subscriber_id = 2;
+  uint64 club_id = 3;
+  repeated MemberStateAssignment assignment = 4;
+}
+
+// SubscriberStateChangedNotification is sent when subscriber's state change.
+message SubscriberStateChangedNotification {
+  MemberId agent_id = 1;
+  MemberId subscriber_id = 2;
+  uint64 club_id = 3;
+  repeated SubscriberStateAssignment assignment = 4;
+}
+
+// MemberRoleChangedNotification is sent when member roles are updated.
+message MemberRoleChangedNotification {
+  MemberId agent_id = 1;
+  MemberId subscriber_id = 2;
+  uint64 club_id = 3;
+  repeated RoleAssignment assignment = 4;
+}
+
+// SuggestionAddedNotification is sent when a suggestion is added.
+message SuggestionAddedNotification {
+  MemberId agent_id = 1;
+  MemberId subscriber_id = 2;
+  uint64 club_id = 3;
+  ClubSuggestion suggestion = 4; // The suggestion added.
+}
+
+// SuggestionRemovedNotification is sent when a suggestion is removed.
+message SuggestionRemovedNotification {
+  MemberId agent_id = 1;
+  MemberId subscriber_id = 2;
+  uint64 club_id = 3;
+  uint64 suggestion_id = 4; // The ID of the removed suggestion.
+  bgs.protocol.SuggestionRemovedReason reason = 5;
+}
+
+// StreamAddedNotification is sent when a stream is added to a club.
+message StreamAddedNotification {
+  MemberId agent_id = 1;
+  MemberId subscriber_id = 2;
+  uint64 club_id = 3;
+  Stream stream = 4;
+}
+
+// StreamRemovedNotification is sent when a stream is removed from a club.
+message StreamRemovedNotification {
+  MemberId agent_id = 1;
+  MemberId subscriber_id = 2;
+  uint64 club_id = 3;
+  uint64 stream_id = 4;
+}
+
+// StreamStateChangedNotification is sent when a stream's state changes.
+message StreamStateChangedNotification {
+  MemberId agent_id = 1;
+  MemberId subscriber_id = 2;
+  uint64 club_id = 3;
+  uint64 stream_id = 4;
+  StreamStateAssignment assignment = 5;
+}
+
+// StreamMessageAddedNotification is sent when a message is added to a stream.
+message StreamMessageAddedNotification {
+  MemberId agent_id = 1;
+  MemberId subscriber_id = 2;
+  uint64 club_id = 3;
+  uint64 stream_id = 4;
+  StreamMessage message = 5;
+}
+
+// StreamMessageUpdatedNotification is sent when a message in a stream is updated.
+message StreamMessageUpdatedNotification {
+  MemberId agent_id = 1;
+  MemberId subscriber_id = 2;
+  uint64 club_id = 3;
+  uint64 stream_id = 4;
+  StreamMessage message = 5;
+}
+
+// StreamTypingIndicatorNotification is sent when typing indicators are updated for a stream.
+message StreamTypingIndicatorNotification {
+  MemberId agent_id = 1;
+  MemberId subscriber_id = 2;
+  uint64 club_id = 3;
+  uint64 stream_id = 4;
+  repeated StreamTypingIndicator indicator = 5;
+}
+
+// StreamUnreadIndicatorNotification informs about unread stream events.
+message StreamUnreadIndicatorNotification {
+  MemberId agent_id = 1;
+  MemberId subscriber_id = 2;
+  uint64 club_id = 3;
+  StreamEventTime event = 4;
+}
+
+// StreamAdvanceViewTimeNotification is sent when the view time for a stream is advanced.
+message StreamAdvanceViewTimeNotification {
+  MemberId agent_id = 1;
+  MemberId subscriber_id = 2;
+  uint64 club_id = 3;
+  repeated StreamAdvanceViewTime view = 4;
+}
+
+// ClubActivityNotification informs about generic activity in the club.
+message ClubActivityNotification {
+  MemberId agent_id = 1;
+  MemberId subscriber_id = 2;
+  uint64 club_id = 3;
+}

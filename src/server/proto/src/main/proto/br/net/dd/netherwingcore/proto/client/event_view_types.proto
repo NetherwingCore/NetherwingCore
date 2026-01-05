@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package bgs.protocol;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "EventViewTypesProto";
+option optimize_for = CODE_SIZE;
+
+// Specifies the order in which events are queried.
+enum EventOrder {
+  EVENT_DESCENDING = 0;
+  EVENT_ASCENDING = 1;
+}
+
+// Options for fetching a list of events.
+message GetEventOptions {
+  // Starting timestamp (inclusive) for the event fetch.
+  uint64 fetch_from = 1;
+
+  // Ending timestamp (inclusive) for the event fetch.
+  uint64 fetch_until = 2;
+
+  // Maximum number of events to fetch.
+  uint32 max_events = 3;
+
+  // Order in which events should be returned.
+  EventOrder order = 4;
+}
+
+// Represents a marker for the viewing position in an event stream.
+message ViewMarker {
+  // Timestamp of the last read event.
+  uint64 last_read_time = 1;
+
+  // Timestamp of the last message event.
+  uint64 last_message_time = 2;
+}

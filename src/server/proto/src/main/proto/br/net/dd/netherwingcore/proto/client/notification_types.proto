@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package bgs.protocol.notification.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "NotificationTypesProto";
+option optimize_for = CODE_SIZE;
+
+import "br/net/dd/netherwingcore/proto/client/account_types.proto";
+import "br/net/dd/netherwingcore/proto/client/attribute_types.proto";
+import "br/net/dd/netherwingcore/proto/client/entity_types.proto";
+import "br/net/dd/netherwingcore/proto/client/rpc_types.proto";
+
+// Represents the target identity and type for notifications.
+message Target {
+  bgs.protocol.account.v1.Identity identity = 1;
+  string type = 2; // Target type identifier or category.
+}
+
+// Defines a subscription for notifications.
+// Contains a list of targets, the subscriber identity, and whether delivery is required.
+message Subscription {
+  repeated Target target = 1;
+  bgs.protocol.account.v1.Identity subscriber = 2;
+  bool delivery_required = 3; // Indicates if delivery is strictly required. False by default.
+}
+
+// Represents an individual notification sent between entities.
+// Includes sender/target IDs and accounts, attributes, battle tags, and forwarding info.
+message Notification {
+  bgs.protocol.EntityId sender_id = 1;
+  bgs.protocol.EntityId target_id = 2;
+  string type = 3; // Notification type identifier.
+  repeated bgs.protocol.Attribute attribute = 4;
+  bgs.protocol.EntityId sender_account_id = 5;
+  bgs.protocol.EntityId target_account_id = 6;
+  string sender_battle_tag = 7;
+  string target_battle_tag = 8;
+  bgs.protocol.ProcessId peer = 9;
+  bgs.protocol.account.v1.Identity forwarding_identity = 10;
+}

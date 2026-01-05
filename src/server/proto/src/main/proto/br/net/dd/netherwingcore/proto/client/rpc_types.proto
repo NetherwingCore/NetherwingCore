@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package bgs.protocol;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "RpcTypesProto";
+option optimize_for = CODE_SIZE;
+
+// Message without fields
+message NO_RESPONSE {}
+
+// Address
+message Address {
+  string address = 1;
+  uint32 port = 2;
+}
+
+// ProcessId
+message ProcessId {
+  uint32 label = 1; // There is no custom option in proto3, remove [(bgs.protocol.field_option) = "\020\000"];
+  uint32 epoch = 2;
+}
+
+// ObjectAddress
+message ObjectAddress {
+  ProcessId host = 1;
+  uint64 object_id = 2;
+}
+
+// NoData (sem campos)
+message NoData {}
+
+// ErrorInfo
+message ErrorInfo {
+  ObjectAddress object_address = 1;
+  uint32 status = 2;
+  uint32 service_hash = 3;
+  uint32 method_id = 4;
+}
+
+// Header
+message Header {
+  uint32 service_id = 1;
+  uint32 method_id = 2;
+  uint32 token = 3;
+  uint64 object_id = 4;
+  uint32 size = 5;
+  uint32 status = 6;
+  repeated ErrorInfo error = 7;
+  uint64 timeout = 8;
+  bool is_response = 9;
+  repeated ProcessId forward_targets = 10;
+  fixed32 service_hash = 11;
+  string client_id = 13;
+}
+
+// KafkaHeader
+message KafkaHeader {
+  fixed32 service_hash = 1;
+  uint32 method_id = 2;
+  uint32 token = 3;
+  uint64 object_id = 4;
+  uint32 size = 5;
+  uint32 status = 6;
+  uint64 timeout = 7;
+  ProcessId forward_target = 8;
+  string return_topic = 9;
+  string client_id = 11;
+}
+
+// Optional: Add global file options if needed.
+option go_package = "bnet.protocol";

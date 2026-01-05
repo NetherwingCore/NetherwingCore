@@ -1,0 +1,217 @@
+syntax = "proto3";
+
+// The following proto defines the account related services and messages for NetherCore.
+
+package bgs.protocol.account.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "AccountServiceProto";
+option optimize_for = CODE_SIZE;
+
+import "br/net/dd/netherwingcore/proto/client/account_types.proto";   // Types related to accounts.
+import "br/net/dd/netherwingcore/proto/client/entity_types.proto";    // Entity identifiers used in requests.
+import "br/net/dd/netherwingcore/proto/client/rpc_types.proto";       // General types for RPC responses.
+
+// Represents a request to resolve an account by reference.
+message ResolveAccountRequest {
+  AccountReference ref = 1;     // Reference to the account being resolved.
+  bool fetch_id = 12;           // Whether to fetch the account ID.
+}
+
+// Response for ResolveAccountRequest
+message ResolveAccountResponse {
+  AccountId id = 12;            // The resolved account ID.
+}
+
+// Request to update a game account flag.
+message GameAccountFlagUpdateRequest {
+  GameAccountHandle game_account = 1; // The handle to the game account.
+  uint64 flag = 2;                    // Flag to set.
+  bool active = 3;                    // Whether to activate the flag.
+}
+
+// Subscription update request and response.
+message SubscriptionUpdateRequest {
+  repeated SubscriberReference ref = 2; // Subscriber references to update.
+}
+message SubscriptionUpdateResponse {
+  repeated SubscriberReference ref = 1; // Updated subscriber references.
+}
+
+// Request to check if a client address is an IGR address.
+message IsIgrAddressRequest {
+  string client_address = 1;  // Client IP or address.
+  uint32 region = 2;          // Region code.
+}
+
+// Request and response for getting account state.
+message GetAccountStateRequest {
+  EntityId entity_id = 1;                   // Entity for which state is requested.
+  uint32 program = 2;
+  uint32 region = 3;
+  AccountFieldOptions options = 10;
+  AccountFieldTags tags = 11;
+}
+message GetAccountStateResponse {
+  AccountState state = 1;
+  AccountFieldTags tags = 2;
+}
+
+// Request and response for getting signed account state.
+message GetSignedAccountStateRequest {
+  AccountId account = 1;
+}
+message GetSignedAccountStateResponse {
+  string token = 1;   // Signed token.
+}
+
+// Game account state (deprecated account_id field).
+message GetGameAccountStateRequest {
+  EntityId account_id = 1 [deprecated = true];
+  EntityId game_account_id = 2;
+  GameAccountFieldOptions options = 10;
+  GameAccountFieldTags tags = 11;
+}
+message GetGameAccountStateResponse {
+  GameAccountState state = 1;
+  GameAccountFieldTags tags = 2;
+}
+
+// License request and response.
+message GetLicensesRequest {
+  EntityId target_id = 1;
+  bool fetch_account_licenses = 2;
+  bool fetch_game_account_licenses = 3;
+  bool fetch_dynamic_account_licenses = 4;
+  uint32 program = 5;
+  bool exclude_unknown_program = 6;
+}
+message GetLicensesResponse {
+  repeated AccountLicense licenses = 1;
+}
+
+// Game session info request and response.
+message GetGameSessionInfoRequest {
+  EntityId entity_id = 1;
+}
+message GetGameSessionInfoResponse {
+  GameSessionInfo session_info = 2;
+}
+
+// Remaining game time info.
+message GetGameTimeRemainingInfoRequest {
+  EntityId game_account_id = 1;
+  EntityId account_id = 2;
+}
+message GetGameTimeRemainingInfoResponse {
+  GameTimeRemainingInfo game_time_remaining_info = 1;
+}
+
+// CAIS info
+message GetCAISInfoRequest {
+  EntityId entity_id = 1;
+}
+message GetCAISInfoResponse {
+  CAIS cais_info = 1;
+}
+
+// Authorized data.
+message GetAuthorizedDataRequest {
+  EntityId entity_id = 1;
+  repeated string tag = 2;
+  bool privileged_network = 3;
+}
+message GetAuthorizedDataResponse {
+  repeated AuthorizedData data = 1;
+}
+
+// Update parental controls and CAIS request.
+message UpdateParentalControlsAndCAISRequest {
+  AccountId account = 1;
+  ParentalControlInfo parental_control_info = 2;
+  string cais_id = 3;
+  uint64 session_start_time = 4;
+  uint64 start_time = 5;
+  uint64 end_time = 6;
+}
+
+// Account state notifications.
+message AccountStateNotification {
+  AccountState account_state = 1;
+  uint64 subscriber_id = 2 [deprecated = true];
+  AccountFieldTags account_tags = 3;
+  bool subscription_completed = 4;
+}
+message GameAccountStateNotification {
+  GameAccountState game_account_state = 1;
+  uint64 subscriber_id = 2 [deprecated = true];
+  GameAccountFieldTags game_account_tags = 3;
+  bool subscription_completed = 4;
+}
+message GameAccountNotification {
+  repeated GameAccountList game_accounts = 1;
+  uint64 subscriber_id = 2;
+  AccountFieldTags account_tags = 3;
+}
+message GameAccountSessionNotification {
+  GameAccountHandle game_account = 1;
+  GameSessionUpdateInfo session_info = 2;
+}
+
+// AccountService RPC definition.
+service AccountService {
+  // Resolves the account using provided reference.
+  rpc ResolveAccount (ResolveAccountRequest) returns (ResolveAccountResponse);
+
+  // Checks if the given address is an IGR.
+  rpc IsIgrAddress (IsIgrAddressRequest) returns (NoData);
+
+  // Subscribes a client for account notifications.
+  rpc Subscribe (SubscriptionUpdateRequest) returns (SubscriptionUpdateResponse);
+
+  // Unsubscribes a client.
+  rpc Unsubscribe (SubscriptionUpdateRequest) returns (NoData);
+
+  // Gets the account state.
+  rpc GetAccountState (GetAccountStateRequest) returns (GetAccountStateResponse);
+
+  // Gets the game account state.
+  rpc GetGameAccountState (GetGameAccountStateRequest) returns (GetGameAccountStateResponse);
+
+  // Gets licenses information.
+  rpc GetLicenses (GetLicensesRequest) returns (GetLicensesResponse);
+
+  // Gets remaining game time info.
+  rpc GetGameTimeRemainingInfo (GetGameTimeRemainingInfoRequest) returns (GetGameTimeRemainingInfoResponse);
+
+  // Gets game session info.
+  rpc GetGameSessionInfo (GetGameSessionInfoRequest) returns (GetGameSessionInfoResponse);
+
+  // Gets CAIS information for account.
+  rpc GetCAISInfo (GetCAISInfoRequest) returns (GetCAISInfoResponse);
+
+  // Gets authorized data for the entity.
+  rpc GetAuthorizedData (GetAuthorizedDataRequest) returns (GetAuthorizedDataResponse);
+
+  // Gets signed account state.
+  rpc GetSignedAccountState (GetSignedAccountStateRequest) returns (GetSignedAccountStateResponse);
+
+  // Updates parental controls and CAIS information.
+  rpc UpdateParentalControlsAndCAIS (UpdateParentalControlsAndCAISRequest) returns (NoData);
+}
+
+// Listener service for account state notifications.
+service AccountListener {
+  // Notification when account state is updated.
+  rpc OnAccountStateUpdated (AccountStateNotification) returns (NO_RESPONSE);
+
+  // Notification when game account state is updated.
+  rpc OnGameAccountStateUpdated (GameAccountStateNotification) returns (NO_RESPONSE);
+
+  // Notification when game accounts are updated.
+  rpc OnGameAccountsUpdated (GameAccountNotification) returns (NO_RESPONSE);
+
+  // Notification when a game session is updated.
+  rpc OnGameSessionUpdated (GameAccountSessionNotification) returns (NO_RESPONSE);
+}

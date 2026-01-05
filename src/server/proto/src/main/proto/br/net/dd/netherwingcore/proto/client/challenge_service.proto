@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+// Package definition for the service
+package bgs.protocol.challenge.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "ChallengeServiceProto";
+option optimize_for = CODE_SIZE;
+
+import "br/net/dd/netherwingcore/proto/client/rpc_types.proto";
+
+// This message is sent from server to client to start a challenge process.
+message ChallengeExternalRequest {
+  // Token uniquely identifying the request.
+  string request_token = 1;
+  // Type of the payload (for example, captcha, OTP, etc).
+  string payload_type = 2;
+  // Payload bytes (for example, binary image, serialized data, etc).
+  bytes payload = 3;
+}
+
+// This message represents the result of the challenge.
+message ChallengeExternalResult {
+  // Token matching the request.
+  string request_token = 1;
+  // Whether the challenge passed (true) or failed.
+  // NOTE: proto3 does not support `default`, initial value will be `false`.
+  // Your application logic will need to set `true` if required.
+  bool passed = 2;
+}
+
+// Service definition for challenge notifications and results.
+service ChallengeListener {
+  // Notifies the client of a new challenge to solve.
+  rpc OnExternalChallenge(ChallengeExternalRequest) returns (bgs.protocol.NO_RESPONSE);
+
+  // Returns the result of the challenge back to the server.
+  rpc OnExternalChallengeResult(ChallengeExternalResult) returns (bgs.protocol.NO_RESPONSE);
+}
+
+// NOTE: If you have a "ChallengeNotify" message (referenced in the generated file), you'll need to define it here.
+// message ChallengeNotify {
+//   // Add fields if required.
+// }

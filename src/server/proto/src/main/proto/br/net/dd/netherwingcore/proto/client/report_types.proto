@@ -1,0 +1,95 @@
+syntax = "proto3";
+
+package bgs.protocol.report.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "ReportTypesProto";
+option optimize_for = CODE_SIZE;
+
+import "br/net/dd/netherwingcore/proto/client/account_types.proto";     // Dependency for GameAccountHandle
+import "br/net/dd/netherwingcore/proto/client/attribute_types.proto";   // Dependency for Attribute
+import "br/net/dd/netherwingcore/proto/client/entity_types.proto";      // Dependency for EntityId
+import "br/net/dd/netherwingcore/proto/client/rpc_types.proto";         // Additional dependency as per original file
+
+// Container for different kinds of reports that a user can submit.
+// Only one report type should be set per ReportType instance.
+message ReportType {
+  string user_description = 1; // Custom textual context added by the user
+
+  // Only one field in the 'type' oneof should be set.
+  oneof type {
+    CustomReport custom_report = 10;                   // Custom report with attributes
+    SpamReport spam_report = 11;                       // Spam report
+    HarassmentReport harassment_report = 12;           // Harassment report
+    RealLifeThreatReport real_life_threat_report = 13; // Report for real-life threats
+    InappropriateBattleTagReport inappropriate_battle_tag_report = 14; // Inappropriate BattleTag report
+    HackingReport hacking_report = 15;                 // Hacking report
+    BottingReport botting_report = 16;                 // Botting (automation) report
+  }
+}
+
+// Custom report for non-standard cases.
+message CustomReport {
+  string type = 1; // Custom type identifier
+
+  // Deprecated program identifier, retained for backward compatibility.
+  string program_id = 2 [deprecated = true];
+
+  repeated bgs.protocol.Attribute attribute = 3; // Additional custom attributes
+}
+
+// Report for spam issues.
+message SpamReport {
+  bgs.protocol.account.v1.GameAccountHandle target = 1; // Account being reported
+
+  SpamSource source = 2; // Where the spam originated (default OTHER)
+
+  // The origin of the spam submission.
+  enum SpamSource {
+    UNDEFINED = 0;        // Undefined source
+    OTHER = 1;               // Unspecified or other origin
+    FRIEND_INVITATION = 2;   // Spam sent as friend invitation
+    WHISPER = 3;             // Spam sent via whisper message
+    CHAT = 4;                // Spam sent in a chat channel
+  }
+}
+
+// Harassment report details.
+message HarassmentReport {
+  bgs.protocol.account.v1.GameAccountHandle target = 1; // Account being harassed
+  string text = 2; // Text explaining the harassment
+}
+
+// Real-life threat report details.
+message RealLifeThreatReport {
+  bgs.protocol.account.v1.GameAccountHandle target = 1; // Account making the threat
+  string text = 2; // Details of the threat
+}
+
+// Report for inappropriate BattleTag violations.
+message InappropriateBattleTagReport {
+  bgs.protocol.account.v1.GameAccountHandle target = 1; // Account with inappropriate BattleTag
+  string battle_tag = 2; // Offending BattleTag
+}
+
+// Hacking report details.
+message HackingReport {
+  bgs.protocol.account.v1.GameAccountHandle target = 1; // Account suspected of hacking
+}
+
+// Botting (automation) report details.
+message BottingReport {
+  bgs.protocol.account.v1.GameAccountHandle target = 1; // Account suspected of botting
+}
+
+// Overall report submission.
+// This message describes a single report event submitted by a user.
+message Report {
+  string report_type = 1; // Identifier for the type of report
+  repeated bgs.protocol.Attribute attribute = 2; // Attributes related to the report
+  int32 report_qos = 3; // Quality-of-Service indicator
+  bgs.protocol.EntityId reporting_account = 4; // Account that submitted the report
+  bgs.protocol.EntityId reporting_game_account = 5; // Game account of the reporter
+  uint64 report_timestamp = 6; // UTC timestamp of the report event
+}

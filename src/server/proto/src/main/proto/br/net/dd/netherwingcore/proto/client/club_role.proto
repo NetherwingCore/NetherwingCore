@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package bgs.protocol.club.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "ClubRoleProto";
+option optimize_for = CODE_SIZE;
+
+import "br/net/dd/netherwingcore/proto/client/role_types.proto";
+
+// Represents all possible privileges a club role can have.
+message ClubPrivilegeSet {
+  bool can_destroy = 1; // Can destroy the club
+  bool can_set_attribute = 10; // Can set club attributes
+  bool can_set_name = 11; // Can set the club name
+  bool can_set_description = 12; // Can set the club description
+  bool can_set_avatar = 13; // Can set the club avatar
+  bool can_set_broadcast = 14; // Can set broadcast messages
+  bool can_set_privacy_level = 15; // Can change privacy level
+  bool can_kick_member = 30; // Can kick members
+  bool can_set_own_member_attribute = 31; // Can set own member attribute
+  bool can_set_other_member_attribute = 32; // Can set attribute for other members
+  bool can_set_own_voice_state = 33; // Can set own voice state
+  bool can_set_own_presence_level = 34; // Can set own presence level
+  bool can_set_own_whisper_level = 35; // Can set own whisper level
+  bool can_set_own_member_note = 36; // Can set own member note
+  bool can_set_other_member_note = 37; // Can set note for other members
+  bool can_use_voice = 50; // Can use voice features
+  bool can_voice_mute_member_for_all = 51; // Can mute member for everyone
+
+  bool can_get_invitation = 70; // Can receive invitations
+  bool can_send_invitation = 71; // Can send invitations
+  bool can_send_guest_invitation = 72; // Can send guest invitations
+  bool can_revoke_own_invitation = 73; // Can revoke own invitation
+  bool can_revoke_other_invitation = 74; // Can revoke other invitations
+
+  bool can_get_suggestion = 90; // Can get suggestions
+  bool can_suggest_member = 91; // Can suggest new member
+  bool can_approve_member = 92; // Can approve member
+
+  bool can_get_ticket = 110; // Can get tickets
+  bool can_create_ticket = 111; // Can create tickets
+  bool can_destroy_ticket = 112; // Can destroy tickets
+
+  bool can_get_ban = 130; // Can view bans
+  bool can_add_ban = 131; // Can add bans
+  bool can_remove_ban = 132; // Can remove bans
+
+  bool can_create_stream = 140; // Can create stream
+  bool can_destroy_stream = 141; // Can destroy stream
+  bool can_set_stream_position = 142; // Can set stream position
+  bool can_set_stream_attribute = 143; // Can set stream attribute
+  bool can_set_stream_name = 144; // Can set stream name
+  bool can_set_stream_subject = 145; // Can set stream subject
+  bool can_set_stream_access = 146; // Can set stream access
+  bool can_set_stream_voice_level = 147; // Can set stream voice level
+
+  bool can_create_message = 180; // Can create messages
+  bool can_destroy_own_message = 181; // Can delete own messages
+  bool can_destroy_other_message = 182; // Can delete messages from others
+  bool can_edit_own_message = 183; // Can edit own messages
+  bool can_pin_message = 184; // Can pin messages
+
+  bool can_mention_all = 185; // Can mention everyone (@all)
+  bool can_mention_here = 186; // Can mention here (@here)
+  bool can_mention_member = 187; // Can mention individual member (@member)
+}
+
+// Represents a role in the club.
+message ClubRole {
+  uint32 id = 1; // Unique ID for the role
+  bgs.protocol.RoleState state = 2; // State of the role (see role_types.proto)
+  ClubPrivilegeSet privilege = 3; // Privileges associated to this role
+  bool always_grant_stream_access = 4; // Always grant stream access for this role
+  bool allow_in_club_slot = 5; // Role allowed in club slot
+}
+
+// List of roles for the club, including default roles
+message ClubRoleSet {
+  repeated ClubRole role = 1; // Defined roles in the club
+
+  // Club default roles (repeated, packed representation)
+  repeated uint32 default_role = 5 [packed = true];
+
+  bool assignment_respects_relegation_chain = 6; // Whether assignment respects relegation chain
+  string subtype = 7; // Subtype of the role set
+}

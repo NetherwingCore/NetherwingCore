@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package bgs.protocol;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client.global_extensions";
+option java_outer_classname = "MethodOptionsProto";
+option optimize_for = CODE_SIZE;
+
+import "google/protobuf/descriptor.proto";
+
+// Message representing the method options.
+message BGSMethodOptions {
+  uint32 id = 1;
+}
+
+// Proto3 compatible extension
+extend google.protobuf.MethodOptions {
+  // Field number 90000 is the same as that used in the compiled file (.pb.cc).
+  BGSMethodOptions method_options = 90000;
+}

@@ -1,0 +1,150 @@
+syntax = "proto3";
+
+package bgs.protocol.connection.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "ConnectionServiceProto";
+option optimize_for = CODE_SIZE;
+
+import "br/net/dd/netherwingcore/proto/client/content_handle_types.proto";
+import "br/net/dd/netherwingcore/proto/client/rpc_types.proto";
+
+// Request to connect a client to the Connection Service.
+message ConnectRequest {
+  // ProcessId of the client requesting connection.
+  bgs.protocol.ProcessId client_id = 1;
+
+  // Optional request to bind services at connection.
+  BindRequest bind_request = 2;
+
+  // If true, enables bindless RPC. Default: true.
+  bool use_bindless_rpc = 3;
+}
+
+// Content handles included for connection metering.
+message ConnectionMeteringContentHandles {
+  // List of content handles relevant for metering.
+  repeated bgs.protocol.ContentHandle content_handle = 1;
+}
+
+// Response from the Connect method.
+message ConnectResponse {
+  // Server-assigned ProcessId. Always set.
+  bgs.protocol.ProcessId server_id = 1;
+
+  // Echoed client id for reference.
+  bgs.protocol.ProcessId client_id = 2;
+
+  // Result of the binding process.
+  uint32 bind_result = 3;
+
+  // Response to the BindRequest (if present).
+  BindResponse bind_response = 4;
+
+  // Metered content handles.
+  ConnectionMeteringContentHandles content_handle_array = 5;
+
+  // UTC timestamp from the server (optional).
+  uint64 server_time = 6;
+
+  // Indicates if bindless RPC is in use.
+  bool use_bindless_rpc = 7;
+
+  // Binary content handles.
+  ConnectionMeteringContentHandles binary_content_handle_array = 8;
+}
+
+// Represents a service available for binding/import/export.
+message BoundService {
+  // Service identifier hash.
+  uint32 hash = 1;
+
+  // Service numeric ID.
+  uint32 id = 2;
+}
+
+// Services to bind (import/export) during connection.
+message BindRequest {
+  // List of services to export.
+  repeated BoundService exported_service = 1;
+
+  // List of services to import.
+  repeated BoundService imported_service = 2;
+}
+
+// Bind response, listing imported service IDs (legacy behavior kept as repeated for compatibility).
+message BindResponse {
+  // IDs of imported services.
+  repeated uint32 imported_service_id = 1;
+}
+
+// Echo request for testing connection latency and health.
+message EchoRequest {
+  // Timestamp for echoing back.
+  uint64 time = 1;
+
+  // If true, do not process above transport. Default: false.
+  bool network_only = 2;
+
+  // Optional application payload.
+  bytes payload = 3;
+
+  // Forwards to other server if set.
+  bgs.protocol.ProcessId forward = 4;
+
+  // Forward this echo to another client if set.
+  string forward_client_id = 5;
+}
+
+// Echo response carrying payload and time echoed back.
+message EchoResponse {
+  // Echoed timestamp.
+  uint64 time = 1;
+
+  // Echoed payload.
+  bytes payload = 2;
+}
+
+// Request for disconnect, conveys error code.
+message DisconnectRequest {
+  // Reason code for disconnect.
+  uint32 error_code = 1;
+}
+
+// Notification of disconnect (from server), with reason string.
+message DisconnectNotification {
+  // Reason code for disconnect.
+  uint32 error_code = 1;
+
+  // Optional human-readable reason.
+  string reason = 2;
+}
+
+// Request to encrypt communication/session.
+message EncryptRequest {
+}
+
+// Main ConnectionService interface.
+service ConnectionService {
+  // Connects a client to the service.
+  rpc Connect(ConnectRequest) returns (ConnectResponse);
+
+  // Binds provided services for exported/imported APIs.
+  rpc Bind(BindRequest) returns (BindResponse);
+
+  // Echo method useful for ping/pong and connection debugging.
+  rpc Echo(EchoRequest) returns (EchoResponse);
+
+  // Forces a client disconnect. No response returned.
+  rpc ForceDisconnect(DisconnectNotification) returns (bgs.protocol.NO_RESPONSE);
+
+  // Keep-alive message for maintaining connection. No response.
+  rpc KeepAlive(bgs.protocol.NoData) returns (bgs.protocol.NO_RESPONSE);
+
+  // Encrypt the session, response is NoData.
+  rpc Encrypt(EncryptRequest) returns (bgs.protocol.NoData);
+
+  // Client requests disconnect (gracefully).
+  rpc RequestDisconnect(DisconnectRequest) returns (bgs.protocol.NO_RESPONSE);
+}

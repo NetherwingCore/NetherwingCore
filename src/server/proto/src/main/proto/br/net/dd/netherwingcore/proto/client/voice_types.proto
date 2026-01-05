@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package bgs.protocol;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "VoiceTypesProto";
+option optimize_for = CODE_SIZE;
+
+message VoiceCredentials {
+  string voice_id = 1;
+  string token = 2;
+  string url = 3;
+  VoiceJoinType join_type = 4;
+  VoiceMuteReason mute_reason = 5;
+}
+
+enum VoiceJoinType {
+  VOICE_JOIN_NORMAL = 0;
+  VOICE_JOIN_MUTED = 1;
+}
+
+enum VoiceMuteReason {
+  VOICE_MUTE_REASON_NONE = 0;
+  VOICE_MUTE_REASON_PARENTAL_CONTROL_LISTEN_ONLY = 1;
+  VOICE_MUTE_REASON_REQUESTED = 2;
+}

@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package bgs.protocol;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "RoleTypesProto";
+option optimize_for = CODE_SIZE;
+
+// Represents a Role with privileges and role relationships.
+message Role {
+  uint32 id = 1; // Unique identifier for the role.
+  string name = 2; // Name of the role.
+
+  repeated string privilege = 3; // List of privileges associated with this role.
+
+  // IDs of roles that this role can assign. (Packed for performance)
+  repeated uint32 assignable_role = 4 [packed = true];
+
+  bool required = 5; // If true, this role must be present.
+  bool unique = 6; // If true, this role is unique and cannot be duplicated.
+
+  uint32 relegation_role = 7; // ID of a role to be assigned upon relegation.
+
+  // IDs of roles that can be kicked by this role. (Packed for performance)
+  repeated uint32 kickable_role = 9 [packed = true];
+
+  // IDs of roles that can be removed with this role. (Packed for performance)
+  repeated uint32 removable_role = 10 [packed = true];
+}
+
+// Represents the runtime state of a role.
+message RoleState {
+  string name = 2; // Name of the role.
+
+  // IDs of roles that this role can assign. (Packed for performance)
+  repeated uint32 assignable_role = 4 [packed = true];
+
+  bool required = 5; // If true, this role must be present.
+  bool unique = 6; // If true, this role is unique and cannot be duplicated.
+
+  uint32 relegation_role = 7; // ID of a role to be assigned upon relegation.
+
+  // IDs of roles that can be kicked by this role. (Packed for performance)
+  repeated uint32 kickable_role = 9 [packed = true];
+
+  // IDs of roles that can be removed with this role. (Packed for performance)
+  repeated uint32 removable_role = 10 [packed = true];
+
+  // IDs of roles that can be mentioned by this role. (Packed for performance)
+  repeated uint32 mentionable_role = 11 [packed = true];
+}

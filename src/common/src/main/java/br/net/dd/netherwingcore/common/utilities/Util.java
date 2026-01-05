@@ -1,6 +1,6 @@
 package br.net.dd.netherwingcore.common.utilities;
 
-import br.net.dd.netherwingcore.Main;
+import br.net.dd.netherwingcore.common.Main;
 
 import java.awt.*;
 import java.io.File;

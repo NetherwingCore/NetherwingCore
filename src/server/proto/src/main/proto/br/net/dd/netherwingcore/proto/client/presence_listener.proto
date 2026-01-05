@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+// Package definition
+package bgs.protocol.presence.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "PresenceListenerProto";
+option optimize_for = CODE_SIZE;
+
+// Import other proto files
+import "br/net/dd/netherwingcore/proto/client/presence_types.proto";
+import "br/net/dd/netherwingcore/proto/client/account_types.proto";
+import "br/net/dd/netherwingcore/proto/client/rpc_types.proto";
+
+// Notification sent when a presence subscription occurs.
+message SubscribeNotification {
+  // Account ID of the subscriber receiving the notification.
+  bgs.protocol.account.v1.AccountId subscriber_id = 1;
+  // List of presence states for the subscriber.
+  repeated bgs.protocol.presence.v1.PresenceState state = 2;
+}
+
+// Notification sent when a presence state changes.
+message StateChangedNotification {
+  // Account ID of the subscriber whose state changed.
+  bgs.protocol.account.v1.AccountId subscriber_id = 1;
+  // Updated list of presence states for the subscriber.
+  repeated bgs.protocol.presence.v1.PresenceState state = 2;
+}
+
+// Service for listening to presence events.
+service PresenceListener {
+  // Called when a client subscribes to presence notifications.
+  rpc OnSubscribe(SubscribeNotification) returns (bgs.protocol.NO_RESPONSE);
+
+  // Called when the presence state for a client changes.
+  rpc OnStateChanged(StateChangedNotification) returns (bgs.protocol.NO_RESPONSE);
+}

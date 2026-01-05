@@ -1,0 +1,93 @@
+syntax = "proto3";
+
+package bgs.protocol.config;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "RpcConfigProto";
+option optimize_for = CODE_SIZE;
+
+// Configuration for one RPC method.
+// Contains cost, size, and rate limiting parameters.
+message RPCMethodConfig {
+  // Deprecated: Service name for the method.
+  string service_name = 1; // deprecated: not used in proto3
+
+  // Deprecated: Method name.
+  string method_name = 2; // deprecated: not used in proto3
+
+  // Fixed cost per call. Default: 1
+  uint32 fixed_call_cost = 3;
+
+  // Fixed packet size for this method. Default: 0
+  uint32 fixed_packet_size = 4;
+
+  // Variable cost multiplier (e.g., per byte). Default: 0
+  float variable_multiplier = 5;
+
+  // Total multiplier for method cost. Default: 1
+  float multiplier = 6;
+
+  // Max number of calls allowed in the rate limit window.
+  uint32 rate_limit_count = 7;
+
+  // Length in seconds of the rate limit window.
+  uint32 rate_limit_seconds = 8;
+
+  // Maximum allowed packet size (bytes).
+  uint32 max_packet_size = 9;
+
+  // Maximum allowed encoded message size (bytes).
+  uint32 max_encoded_size = 10;
+
+  // Timeout for the method in seconds.
+  float timeout = 11;
+
+  // Maximum resource balance available for the method.
+  uint32 cap_balance = 12;
+
+  // Resource income rate per second.
+  float income_per_second = 13;
+
+  // Unique hash of the service.
+  uint32 service_hash = 14;
+
+  // Method ID number.
+  uint32 method_id = 15;
+}
+
+// Configuration for a group of RPC methods in the metering system.
+// Used for tracking and limiting resource usage on collections of methods.
+message RPCMeterConfig {
+  // List of RPC method configs.
+  repeated RPCMethodConfig method = 1;
+
+  // Overall income per second.
+  uint32 income_per_second = 2;
+
+  // Initial balance for resource usage.
+  uint32 initial_balance = 3;
+
+  // Maximum balance allowed.
+  uint32 cap_balance = 4;
+
+  // Length of startup period in seconds.
+  float startup_period = 5;
+}
+
+// Alias mapping for protocol services.
+// Used to map server and client service names.
+message ProtocolAlias {
+  // Server service name.
+  string server_service_name = 1;
+
+  // Client service name.
+  string client_service_name = 2;
+}
+
+// Collection of protocol aliases.
+// Used to group all service aliases for configuration.
+message ServiceAliases {
+  // List of protocol aliases.
+  repeated ProtocolAlias protocol_alias = 1;
+}

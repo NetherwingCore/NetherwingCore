@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package bgs.protocol.club.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "ClubEnumProto";
+option optimize_for = CODE_SIZE;
+
+// Privacy setting of a club.
+enum PrivacyLevel {
+  // Only invited members can join.
+  PRIVACY_LEVEL_CLOSED = 0;
+  // Anyone with an invitation can join.
+  PRIVACY_LEVEL_OPEN_INVITATION = 1;
+  // Join by ticket/permission.
+  PRIVACY_LEVEL_OPEN_TICKET = 2;
+  // Completely open membership.
+  PRIVACY_LEVEL_OPEN = 3;
+}
+
+// Visibility setting of a club.
+enum VisibilityLevel {
+  // Club is private.
+  VISIBILITY_LEVEL_PRIVATE = 0;
+  // Club is public.
+  VISIBILITY_LEVEL_PUBLIC = 1;
+}
+
+// Reasons why a member was removed from a club.
+enum ClubRemovedReason {
+  // No reason specified.
+  CLUB_REMOVED_REASON_NONE = 0;
+  // Member left voluntarily.
+  CLUB_REMOVED_REASON_MEMBER_LEFT = 1;
+  // Member was kicked by another member.
+  CLUB_REMOVED_REASON_MEMBER_KICKED = 2;
+  // Member was banned from the club.
+  CLUB_REMOVED_REASON_MEMBER_BANNED = 3;
+  // Member was removed by an automated service.
+  CLUB_REMOVED_REASON_MEMBER_REMOVED_BY_SERVICE = 4;
+  // Club destroyed by a member.
+  CLUB_REMOVED_REASON_DESTROYED_BY_MEMBER = 5;
+  // Club destroyed by a service.
+  CLUB_REMOVED_REASON_DESTROYED_BY_SERVICE = 6;
+}
+
+// Voice level options for club streams.
+enum StreamVoiceLevel {
+  // Voice disabled.
+  VOICE_LEVEL_DISABLED = 0;
+  // Push-to-talk mode.
+  VOICE_LEVEL_PUSH_TO_TALK = 1;
+  // Open microphone mode.
+  VOICE_LEVEL_OPEN_MIC = 2;
+}
+
+// Microphone state options.
+enum VoiceMicrophoneState {
+  // Microphone is in normal mode.
+  MICROPHONE_STATE_NORMAL = 0;
+  // Microphone is muted by the user.
+  MICROPHONE_STATE_SELF_MUTE = 1;
+  // User has deafened themselves.
+  MICROPHONE_STATE_SELF_DEAF = 2;
+}
+
+// Club presence level options.
+enum PresenceLevel {
+  // No presence information.
+  PRESENCE_LEVEL_NONE = 0;
+  // Basic presence data (e.g. online/offline).
+  PRESENCE_LEVEL_BASIC = 1;
+  // Rich presence information available.
+  PRESENCE_LEVEL_RICH = 2;
+}
+
+// Whisper level options for club chat.
+enum WhisperLevel {
+  // Whispering is open to all.
+  WHISPER_LEVEL_OPEN = 0;
+  // Whispering is restricted.
+  WHISPER_LEVEL_RESTRICTED = 1;
+}
+
+// Notification filter options for club streams.
+enum StreamNotificationFilter {
+  // No notifications.
+  STREAM_NOTIFICATION_FILTER_NONE = 0;
+  // Notify when user is mentioned.
+  STREAM_NOTIFICATION_FILTER_MENTION = 1;
+  // Notify for all activity.
+  STREAM_NOTIFICATION_FILTER_ALL = 2;
+}

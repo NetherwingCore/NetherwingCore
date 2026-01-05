@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package bgs.protocol.user_manager.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "UserManagerTypesProto";
+option optimize_for = CODE_SIZE;
+
+import "br/net/dd/netherwingcore/proto/client/entity_types.proto";
+import "br/net/dd/netherwingcore/proto/client/attribute_types.proto";
+
+// RecentPlayer message
+message RecentPlayer {
+  bgs.protocol.EntityId entity_id = 1;
+  string program = 2;
+  fixed64 timestamp_played = 3;
+  repeated bgs.protocol.Attribute attributes = 4;
+  uint32 id = 5;
+  uint32 counter = 6;
+}
+
+// BlockedPlayer message
+message BlockedPlayer {
+  bgs.protocol.EntityId account_id = 1;
+  string name = 2;
+  repeated uint32 role = 3;
+  uint64 privileges = 4;
+}

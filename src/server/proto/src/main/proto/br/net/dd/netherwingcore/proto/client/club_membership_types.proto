@@ -1,0 +1,66 @@
+// Club membership type definitions.
+// This file describes the various messages for handling club membership logic
+// in the DestinyCore system.
+
+syntax = "proto3";
+
+package bgs.protocol.club.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "ClubMembershipTypesProto";
+option optimize_for = CODE_SIZE;
+
+// Import external types needed for club membership description.
+import "br/net/dd/netherwingcore/proto/client/club_core.proto";
+import "br/net/dd/netherwingcore/proto/client/club_member.proto";
+import "br/net/dd/netherwingcore/proto/client/club_invitation.proto";
+import "br/net/dd/netherwingcore/proto/client/event_view_types.proto";
+
+// Describes the membership of an individual in a club.
+message ClubMembershipDescription {
+  // The unique identifier for a club member.
+  bgs.protocol.club.v1.MemberId member_id = 1;
+
+  // The club description the member belongs to.
+  bgs.protocol.club.v1.ClubDescription club = 2;
+}
+
+// Represents the membership state in the club, including invitations and settings.
+message ClubMembershipState {
+  // List of membership descriptions.
+  repeated ClubMembershipDescription description = 1;
+
+  // List of active invitations for club membership.
+  repeated bgs.protocol.club.v1.ClubInvitation invitation = 2;
+
+  // Club shared settings (optional).
+  ClubSharedSettings setting = 3;
+
+  // A marker for the current mention/view (optional).
+  bgs.protocol.ViewMarker mention_view = 4;
+}
+
+// Represents position information in a club.
+message ClubPosition {
+  // List of club IDs representing positions.
+  repeated uint64 club_id = 1;
+}
+
+// Represents shared settings within a club.
+message ClubSharedSettings {
+  // Club position information.
+  ClubPosition club_position = 1;
+}
+
+// Options for shared club settings.
+message ClubSharedSettingsOptions {
+  // Club position options.
+  ClubPosition club_position = 1;
+}
+
+// Assignments for club shared settings.
+message ClubSharedSettingsAssignment {
+  // Assigned club position settings.
+  ClubPosition club_position = 1;
+}

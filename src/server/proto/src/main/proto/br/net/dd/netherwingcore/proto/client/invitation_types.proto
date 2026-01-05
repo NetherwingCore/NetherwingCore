@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package bgs.protocol;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "InvitationTypesProto";
+option optimize_for = CODE_SIZE;
+
+import "br/net/dd/netherwingcore/proto/client/entity_types.proto";
+
+// Represents an invitation between two identities.
+message Invitation {
+  uint64 id = 1; // Unique identifier for the invitation.
+  Identity inviter_identity = 2; // The user who sends the invitation.
+  Identity invitee_identity = 3; // The user who receives the invitation.
+  string inviter_name = 4; // Name of the inviter.
+  string invitee_name = 5; // Name of the invitee.
+  string invitation_message = 6; // Custom message included with the invitation.
+  uint64 creation_time = 7; // Unix timestamp when the invitation was created.
+  uint64 expiration_time = 8; // Unix timestamp when the invitation expires.
+}
+
+// Parameters for sending an invitation.
+message InvitationParams {
+  // Deprecated: Use other fields or messages as needed.
+  string invitation_message = 1; // Message to be sent with the invitation.
+  uint64 expiration_time = 2; // Expiration time of the invitation.
+}
+
+// Reason why an invitation was removed.
+enum InvitationRemovedReason {
+  INVITATION_REMOVED_REASON_ACCEPTED = 0; // The invitation was accepted.
+  INVITATION_REMOVED_REASON_DECLINED = 1; // The invitation was declined.
+  INVITATION_REMOVED_REASON_REVOKED = 2; // The invitation was revoked by the sender.
+  INVITATION_REMOVED_REASON_IGNORED = 3; // The invitation was ignored.
+  INVITATION_REMOVED_REASON_EXPIRED = 4; // The invitation expired before response.
+  INVITATION_REMOVED_REASON_CANCELED = 5; // The invitation was canceled.
+}
+
+// Reason why a suggestion was removed.
+enum SuggestionRemovedReason {
+  SUGGESTION_REMOVED_REASON_APPROVED = 0; // The suggestion was approved.
+  SUGGESTION_REMOVED_REASON_DECLINED = 1; // The suggestion was declined.
+  SUGGESTION_REMOVED_REASON_EXPIRED = 2; // The suggestion expired.
+  SUGGESTION_REMOVED_REASON_CANCELED = 3; // The suggestion was canceled.
+}

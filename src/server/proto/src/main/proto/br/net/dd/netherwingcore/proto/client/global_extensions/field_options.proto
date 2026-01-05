@@ -1,0 +1,100 @@
+syntax = "proto3";
+
+package bgs.protocol;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client.global_extensions";
+option java_outer_classname = "FieldOptionsProto";
+option optimize_for = CODE_SIZE;
+
+import "google/protobuf/descriptor.proto";
+import "br/net/dd/netherwingcore/proto/client/global_extensions/range.proto";
+
+// Log options for fields
+enum LogOption {
+  LOG_OPTION_UNSPECIFIED = 0;
+  HIDDEN = 1;
+  HEX = 2;
+}
+
+// Restriction for entity id
+message EntityIdRestriction {
+  bool needed = 1;
+  enum Kind {
+    KIND_UNSPECIFIED = 0;
+    ANY = 1;
+    ACCOUNT = 2;
+    GAME_ACCOUNT = 3;
+    ACCOUNT_OR_GAME_ACCOUNT = 4;
+    SERVICE = 5;
+    CHANNEL = 6;
+  }
+  Kind kind = 2;
+}
+
+// Restriction for message-type fields
+message MessageFieldRestriction {
+  bool needed = 1;
+}
+
+// Restriction for string fields
+message StringFieldRestriction {
+  bgs.protocol.UnsignedIntRange size = 1;
+  repeated string exclude = 2;
+}
+
+// Restriction for float fields
+message FloatFieldRestriction {
+  bgs.protocol.FloatRange limits = 1;
+  repeated float exclude = 2;
+}
+
+// Restriction for unsigned int fields
+message UnsignedFieldRestriction {
+  bgs.protocol.UnsignedIntRange limits = 1;
+  repeated uint64 exclude = 2;
+}
+
+// Restriction for signed int fields
+message SignedFieldRestriction {
+  bgs.protocol.SignedIntRange limits = 1;
+  repeated sint64 exclude = 2;
+}
+
+// Restriction for repeated fields
+message RepeatedFieldRestriction {
+  bgs.protocol.UnsignedIntRange size = 1;
+  bool unique = 2;
+  oneof type {
+    SignedFieldRestriction signed = 3;
+    UnsignedFieldRestriction unsigned = 4;
+    FloatFieldRestriction float = 5;
+    StringFieldRestriction string = 6;
+    EntityIdRestriction entity_id = 7;
+  }
+}
+
+// Restriction for singular field
+message FieldRestriction {
+  oneof type {
+    SignedFieldRestriction signed = 1;
+    UnsignedFieldRestriction unsigned = 2;
+    FloatFieldRestriction float = 3;
+    StringFieldRestriction string = 4;
+    RepeatedFieldRestriction repeated = 5;
+    MessageFieldRestriction message = 6;
+    EntityIdRestriction entity_id = 7;
+  }
+}
+
+// Extra field options, using an extension on FieldOptions
+message BGSFieldOptions {
+  LogOption log = 1;
+  bool shard_key = 2;
+}
+
+// Extension: extra options for fields
+extend google.protobuf.FieldOptions {
+  BGSFieldOptions field_options = 90000;
+  FieldRestriction valid = 90001;
+}

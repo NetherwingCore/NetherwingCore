@@ -1,0 +1,40 @@
+// Resource Service Protocol Definitions using proto3 syntax.
+// Defines protocol messages and services for retrieving content handles.
+
+syntax = "proto3";
+
+package bgs.protocol.resources.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "ResourceServiceProto";
+option optimize_for = CODE_SIZE;
+
+// Import definitions for ContentHandle and RPC types.
+import "br/net/dd/netherwingcore/proto/client/content_handle_types.proto";
+import "br/net/dd/netherwingcore/proto/client/rpc_types.proto";
+
+/**
+ * Request message sent to get a ContentHandle.
+ */
+message ContentHandleRequest {
+  // Program identifier.
+  uint32 program = 1;
+
+  // Stream identifier.
+  uint32 stream = 2;
+
+  // Version number. If not set, will default to 0.
+  uint32 version = 3;
+}
+
+/**
+ * Service for resources-related RPCs.
+ */
+service ResourcesService {
+  /**
+   * Gets a ContentHandle for the specified program, stream, and version.
+   * The response is a ContentHandle message as defined in content_handle_types.proto.
+   */
+  rpc GetContentHandle(ContentHandleRequest) returns (bgs.protocol.ContentHandle);
+}

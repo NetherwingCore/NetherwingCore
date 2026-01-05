@@ -1,0 +1,100 @@
+syntax = "proto3";
+
+package bgs.protocol.club.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "ClubRangeSetProto";
+option optimize_for = CODE_SIZE;
+
+import "br/net/dd/netherwingcore/proto/client/global_extensions/range.proto";
+
+// Specifies the full range set for a club type (used for club configuration limits).
+message ClubTypeRangeSet {
+  // Range for club names.
+  bgs.protocol.UnsignedIntRange name_range = 2;
+
+  // Range for club descriptions.
+  bgs.protocol.UnsignedIntRange description_range = 3;
+
+  // Range for broadcast message length.
+  bgs.protocol.UnsignedIntRange broadcast_range = 4;
+
+  // Range for club short name.
+  bgs.protocol.UnsignedIntRange short_name_range = 7;
+
+  // Range set for club members.
+  ClubMemberRangeSet member = 25;
+
+  // Range set for club streams.
+  ClubStreamRangeSet stream = 26;
+
+  // Range set for club invitations.
+  ClubInvitationRangeSet invitation = 27;
+
+  // Range set for club suggestions.
+  ClubSuggestionRangeSet suggestion = 28;
+
+  // Range set for club tickets.
+  ClubTicketRangeSet ticket = 29;
+
+  // Range set for club bans.
+  ClubBanRangeSet ban = 30;
+}
+
+// Specifies allowed ranges for club members.
+message ClubMemberRangeSet {
+  // Range for the number of members.
+  bgs.protocol.UnsignedIntRange count = 1;
+
+  // Range for the number of members with voice capability.
+  bgs.protocol.UnsignedIntRange voice = 3;
+
+  // Range for the number of stream subscriptions.
+  bgs.protocol.UnsignedIntRange stream_subscriptions = 5;
+
+  // Range for note length per member.
+  bgs.protocol.UnsignedIntRange note = 7;
+}
+
+// Specifies allowed ranges for club streams.
+message ClubStreamRangeSet {
+  // Range for the number of streams.
+  bgs.protocol.UnsignedIntRange count = 1;
+
+  // Range for stream name length.
+  bgs.protocol.UnsignedIntRange name_range = 3;
+
+  // Range for stream subject length.
+  bgs.protocol.UnsignedIntRange subject_range = 4;
+
+  // Range for stream message length.
+  bgs.protocol.UnsignedIntRange message_range = 5;
+}
+
+// Specifies allowed ranges for club invitations.
+message ClubInvitationRangeSet {
+  // Range for the number of invitations.
+  bgs.protocol.UnsignedIntRange count = 1;
+}
+
+// Specifies allowed ranges for club suggestions.
+message ClubSuggestionRangeSet {
+  // Range for the number of suggestions.
+  bgs.protocol.UnsignedIntRange count = 1;
+}
+
+// Specifies allowed ranges for club tickets.
+message ClubTicketRangeSet {
+  // Range for the number of tickets.
+  bgs.protocol.UnsignedIntRange count = 1;
+}
+
+// Specifies allowed ranges for club bans.
+message ClubBanRangeSet {
+  // Range for the number of bans.
+  bgs.protocol.UnsignedIntRange count = 1;
+
+  // Range for ban reason string length.
+  bgs.protocol.UnsignedIntRange reason_range = 3;
+}

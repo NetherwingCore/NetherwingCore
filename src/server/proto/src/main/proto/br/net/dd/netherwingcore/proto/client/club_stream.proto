@@ -1,0 +1,188 @@
+syntax = "proto3";
+
+package bgs.protocol.club.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "ClubStreamProto";
+option optimize_for = CODE_SIZE;
+
+// Import dependent definitions.
+import "br/net/dd/netherwingcore/proto/client/club_enum.proto";
+import "br/net/dd/netherwingcore/proto/client/club_member.proto";
+import "br/net/dd/netherwingcore/proto/client/api/client/v2/attribute_types.proto";
+import "br/net/dd/netherwingcore/proto/client/embed_types.proto";
+import "br/net/dd/netherwingcore/proto/client/event_view_types.proto";
+import "br/net/dd/netherwingcore/proto/client/message_types.proto";
+import "br/net/dd/netherwingcore/proto/client/ets_types.proto";
+
+// Represents one or more stream identifiers (IDs).
+message StreamPosition {
+  // List of stream IDs.
+  repeated uint64 stream_id = 1;
+}
+
+// Access configuration for a stream.
+message StreamAccess {
+  // List of role IDs with access.
+  repeated uint32 role = 1;
+}
+
+// Options used to create a stream.
+message CreateStreamOptions {
+  // Attributes pertaining to the stream.
+  repeated bgs.protocol.v2.Attribute attribute = 1;
+  // Display name for the stream.
+  string name = 2;
+  // Subject of the stream (optional topic or description).
+  string subject = 3;
+  // Access configuration for the stream.
+  StreamAccess access = 4;
+  // Voice level for the stream.
+  StreamVoiceLevel voice_level = 5;
+}
+
+// Main stream data definition.
+message Stream {
+  // Club ID owning this stream.
+  uint64 club_id = 1;
+  // Unique stream ID.
+  uint64 id = 2;
+  // Custom attributes for the stream.
+  repeated bgs.protocol.v2.Attribute attribute = 3;
+  // Stream name.
+  string name = 4;
+  // Optional subject/topic.
+  string subject = 5;
+  // Stream access configuration.
+  StreamAccess access = 6;
+  // Voice level setting.
+  StreamVoiceLevel voice_level = 7;
+  // Time of stream creation (epoch, in microseconds?).
+  uint64 creation_time = 8;
+}
+
+// Content data for a mention within a stream message.
+message MentionContent {
+  // True if this is an "@all" mention.
+  bool all = 1;
+  // True if this is an "@here" mention.
+  bool here = 2;
+  // List of member IDs mentioned.
+  repeated MemberId member_id = 3;
+  // List of role IDs mentioned.
+  repeated uint32 role = 4;
+}
+
+// Options for creating a message in a stream.
+message CreateMessageOptions {
+  // Message text content.
+  string content = 2;
+  // Mention content (if any).
+  MentionContent mention = 3;
+}
+
+// Container for multiple stream messages.
+message ClubStreamMessageContainer {
+  // List of stream messages.
+  repeated StreamMessage message = 1;
+}
+
+// A chunk of content, possibly with embeds or mentions.
+message ContentChain {
+  // The text content.
+  string content = 5;
+  // List of embeds (images, videos, etc).
+  repeated bgs.protocol.EmbedInfo embed = 6;
+  // Mention content (if any).
+  MentionContent mention = 7;
+  // Last edit time of this content.
+  uint64 edit_time = 8;
+}
+
+// Represents a message in a stream.
+message StreamMessage {
+  // Unique message ID.
+  bgs.protocol.MessageId id = 3;
+  // Author of the message.
+  MemberDescription author = 4;
+  // The content chain(s) of the message.
+  repeated ContentChain content_chain = 6;
+  // Message destroyer (if deleted).
+  MemberDescription destroyer = 15;
+  // True if the message was destroyed/deleted.
+  bool destroyed = 16;
+  // Destroy time (epoch).
+  uint64 destroy_time = 17;
+}
+
+// Represents a mention in a stream.
+message StreamMention {
+  // Club ID.
+  uint64 club_id = 1;
+  // Stream ID.
+  uint64 stream_id = 2;
+  // Message ID associated with this mention.
+  bgs.protocol.MessageId message_id = 3;
+  // Author of the mention.
+  MemberDescription author = 4;
+  // True if the mention was destroyed.
+  bool destroyed = 5;
+  // Unique mention ID.
+  bgs.protocol.TimeSeriesId mention_id = 6;
+  // The member ID that was mentioned.
+  MemberId member_id = 7;
+}
+
+// Records a user's last stream view marker.
+message StreamView {
+  uint64 club_id = 1;
+  uint64 stream_id = 2;
+  bgs.protocol.ViewMarker marker = 3;
+}
+
+// Advance view time for a stream.
+message StreamAdvanceViewTime {
+  uint64 stream_id = 1;
+  uint64 view_time = 2;
+}
+
+// Event timing for a stream.
+message StreamEventTime {
+  uint64 stream_id = 1;
+  uint64 event_time = 2;
+}
+
+// Records a user's last mention view marker.
+message StreamMentionView {
+  uint64 club_id = 1;
+  uint64 stream_id = 2;
+  bgs.protocol.ViewMarker marker = 3;
+}
+
+// Options for changing stream state.
+message StreamStateOptions {
+  repeated bgs.protocol.v2.Attribute attribute = 1;
+  string name = 2;
+  string subject = 3;
+  StreamAccess access = 4;
+  StreamVoiceLevel voice_level = 5;
+}
+
+// Assignment for stream state changes.
+message StreamStateAssignment {
+  uint64 stream_id = 1;
+  repeated bgs.protocol.v2.Attribute attribute = 2;
+  string name = 3;
+  string subject = 4;
+  StreamAccess access = 5;
+  bool stream_subscription_removed = 6;
+  StreamVoiceLevel voice_level = 7;
+}
+
+// Typing indicator in a stream.
+message StreamTypingIndicator {
+  MemberId author_id = 1;
+  bgs.protocol.TypingIndicator indicator = 2;
+  uint64 epoch = 3;
+}

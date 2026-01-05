@@ -1,0 +1,333 @@
+syntax = "proto3";
+
+package bgs.protocol.club.v1;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "ClubRequestProto";
+option optimize_for = CODE_SIZE;
+
+// Import base .proto, assuming existence for types referenced
+import "br/net/dd/netherwingcore/proto/client/club_enum.proto";
+import "br/net/dd/netherwingcore/proto/client/club_role.proto";
+import "br/net/dd/netherwingcore/proto/client/club_stream.proto";
+import "br/net/dd/netherwingcore/proto/client/api/client/v2/attribute_types.proto";
+import "br/net/dd/netherwingcore/proto/client/event_view_types.proto";
+import "br/net/dd/netherwingcore/proto/client/club_core.proto";
+import "br/net/dd/netherwingcore/proto/client/club_range_set.proto";
+import "br/net/dd/netherwingcore/proto/client/club_invitation.proto";
+import "br/net/dd/netherwingcore/proto/client/club_ban.proto";
+import "br/net/dd/netherwingcore/proto/client/club_notification.proto";
+import "br/net/dd/netherwingcore/proto/client/club_member.proto";
+import "br/net/dd/netherwingcore/proto/client/voice_types.proto";
+import "br/net/dd/netherwingcore/proto/client/message_types.proto";
+
+// ----------------- Requests & Responses ---------------------
+// Subscribe to a club.
+message SubscribeRequest {
+  MemberId agent_id = 1;
+}
+message UnsubscribeRequest {
+  MemberId agent_id = 1;
+}
+
+// Create club request/response.
+message CreateRequest {
+  MemberId agent_id = 1;
+  ClubCreateOptions options = 2;
+}
+message CreateResponse {
+  uint64 club_id = 1;
+}
+
+// Destroy club request.
+message DestroyRequest {
+  MemberId agent_id = 1;
+}
+
+// Get club description.
+message GetDescriptionRequest {
+  MemberId agent_id = 1;
+}
+message GetDescriptionResponse {
+  ClubDescription club = 1;
+}
+
+// Get club by type.
+message GetClubTypeRequest {
+  MemberId agent_id = 1;
+  UniqueClubType type = 2;
+}
+message GetClubTypeResponse {
+  // Could add details as needed
+}
+
+// Update club state/settings.
+message UpdateClubStateRequest {
+  MemberId agent_id = 1;
+  ClubStateOptions options = 2;
+}
+message UpdateClubSettingsRequest {
+  MemberId agent_id = 1;
+  ClubSettingsOptions options = 2;
+}
+
+// Join/Leave club.
+message JoinRequest {
+  MemberId agent_id = 1;
+  CreateMemberOptions options = 2;
+}
+message LeaveRequest {
+  MemberId agent_id = 1;
+}
+
+// Kick user from club.
+message KickRequest {
+  MemberId agent_id = 1;
+  MemberId target_id = 2;
+}
+
+// Get single member info.
+message GetMemberRequest {
+  MemberId agent_id = 1;
+  MemberId member_id = 2;
+}
+message GetMemberResponse {
+  Member member = 1;
+}
+
+// Get all members.
+message GetMembersRequest {
+  MemberId agent_id = 1;
+}
+message GetMembersResponse {
+  // repeated Member members = 1;
+}
+
+// Update member state.
+message UpdateMemberStateRequest {
+  // fields as needed
+}
+
+// Subscriber state
+message UpdateSubscriberStateRequest {
+  MemberId agent_id = 1;
+  SubscriberStateOptions options = 2;
+}
+
+// Role assignment
+message AssignRoleRequest {
+  MemberId agent_id = 1;
+  RoleAssignment assignment = 2;
+}
+message UnassignRoleRequest {
+  MemberId agent_id = 1;
+  RoleAssignment assignment = 2;
+}
+
+// Invitations
+message SendInvitationRequest {
+  MemberId agent_id = 1;
+  SendInvitationOptions options = 2;
+}
+message AcceptInvitationRequest {
+  MemberId agent_id = 1;
+}
+message DeclineInvitationRequest {
+  MemberId agent_id = 1;
+}
+message RevokeInvitationRequest {
+  MemberId agent_id = 1;
+}
+message GetInvitationRequest {
+  MemberId agent_id = 1;
+}
+message GetInvitationResponse {
+  ClubInvitation invitation = 1;
+}
+message GetInvitationsRequest {
+  MemberId agent_id = 1;
+}
+message GetInvitationsResponse {
+  // repeated ClubInvitation invitations = 1;
+}
+
+// Suggestions
+message SendSuggestionRequest {
+  MemberId agent_id = 1;
+  SendSuggestionOptions options = 2;
+}
+message AcceptSuggestionRequest {
+  MemberId agent_id = 1;
+}
+message DeclineSuggestionRequest {
+  MemberId agent_id = 1;
+}
+message GetSuggestionRequest {
+  MemberId agent_id = 1;
+}
+message GetSuggestionResponse {
+  ClubSuggestion suggestion = 1;
+}
+message GetSuggestionsRequest {
+  MemberId agent_id = 1;
+}
+message GetSuggestionsResponse {
+  // repeated ClubSuggestion suggestions = 1;
+}
+
+// Tickets
+message CreateTicketRequest {
+  MemberId agent_id = 1;
+  CreateTicketOptions options = 2;
+}
+message CreateTicketResponse {
+  ClubTicket ticket = 1;
+}
+message DestroyTicketRequest {
+  MemberId agent_id = 1;
+}
+message RedeemTicketRequest {
+  MemberId agent_id = 1;
+}
+message GetTicketRequest {
+  MemberId agent_id = 1;
+}
+message GetTicketResponse {
+  ClubTicket ticket = 1;
+}
+message GetTicketsRequest {
+  MemberId agent_id = 1;
+}
+message GetTicketsResponse {
+  // repeated ClubTicket tickets = 1;
+}
+
+// Bans
+message AddBanRequest {
+  MemberId agent_id = 1;
+  AddBanOptions options = 2;
+}
+message RemoveBanRequest {
+  MemberId agent_id = 1;
+  MemberId target_id = 2;
+}
+message GetBanRequest {
+  MemberId agent_id = 1;
+  MemberId target_id = 2;
+}
+message GetBanResponse {
+  ClubBan ban = 1;
+}
+message GetBansRequest {
+  MemberId agent_id = 1;
+}
+message GetBansResponse {
+  // repeated ClubBan bans = 1;
+}
+
+// Streams
+message SubscribeStreamRequest {
+  MemberId agent_id = 1;
+}
+message UnsubscribeStreamRequest {
+  MemberId agent_id = 1;
+}
+message CreateStreamRequest {
+  MemberId agent_id = 1;
+  CreateStreamOptions options = 2;
+}
+message DestroyStreamRequest {
+  MemberId agent_id = 1;
+}
+message GetStreamRequest {
+  MemberId agent_id = 1;
+}
+message GetStreamResponse {
+  Stream stream = 1;
+}
+message GetStreamsRequest {
+  MemberId agent_id = 1;
+}
+message GetStreamsResponse {
+  // repeated Stream streams = 1;
+}
+message UpdateStreamStateRequest {
+  MemberId agent_id = 1;
+  StreamStateOptions options = 2;
+}
+message SetStreamFocusRequest {
+  MemberId agent_id = 1;
+}
+
+// Messages
+message CreateMessageRequest {
+  MemberId agent_id = 1;
+  CreateMessageOptions options = 2;
+}
+message CreateMessageResponse {
+  StreamMessage message = 1;
+}
+message DestroyMessageRequest {
+  MemberId agent_id = 1;
+  MessageId message_id = 2;
+}
+message DestroyMessageResponse {
+  StreamMessage message = 1;
+}
+message EditMessageRequest {
+  // fields as needed
+}
+message EditMessageResponse {
+  StreamMessage message = 1;
+}
+message SetMessagePinnedRequest {
+  MemberId agent_id = 1;
+}
+message SetTypingIndicatorRequest {
+  MemberId agent_id = 1;
+}
+
+// Stream view time
+message AdvanceStreamViewTimeRequest {
+  MemberId agent_id = 1;
+}
+message AdvanceStreamMentionViewTimeRequest {
+  MemberId agent_id = 1;
+}
+message AdvanceActivityViewTimeRequest {
+  MemberId agent_id = 1;
+}
+
+// Stream history
+message GetStreamHistoryRequest {
+  MemberId agent_id = 1;
+  GetEventOptions options = 2;
+}
+message GetStreamHistoryResponse {
+  // repeated Event events = 1;
+}
+
+// Club activity
+message GetClubActivityRequest {
+  MemberId agent_id = 1;
+  GetEventOptions options = 2;
+}
+message GetClubActivityResponse {
+  // repeated Event activities = 1;
+}
+
+// Voice
+message GetStreamVoiceTokenRequest {
+  MemberId agent_id = 1;
+}
+message GetStreamVoiceTokenResponse {
+  VoiceCredentials credentials = 1;
+}
+message KickFromStreamVoiceRequest {
+  MemberId agent_id = 1;
+  MemberId target_id = 2;
+}
+
+// ------------------------------------------------------------
+// You may need to define any missing types if not already present.

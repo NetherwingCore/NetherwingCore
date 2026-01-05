@@ -1,0 +1,132 @@
+syntax = "proto3";
+
+package bgs.protocol.club.v1.membership;
+
+// Java generation options
+option java_package = "br.net.dd.netherwingcore.proto.client";
+option java_outer_classname = "ClubMembershipListenerProto";
+option optimize_for = CODE_SIZE;
+
+import "br/net/dd/netherwingcore/proto/client/club_types.proto";
+import "br/net/dd/netherwingcore/proto/client/account_types.proto";
+import "br/net/dd/netherwingcore/proto/client/rpc_types.proto";
+import "br/net/dd/netherwingcore/proto/client/ets_types.proto";
+import "br/net/dd/netherwingcore/proto/client/invitation_types.proto";
+import "br/net/dd/netherwingcore/proto/client/club_stream.proto";
+import "br/net/dd/netherwingcore/proto/client/club_membership_types.proto";
+import "br/net/dd/netherwingcore/proto/client/club_enum.proto";
+import "br/net/dd/netherwingcore/proto/client/club_member.proto";
+import "br/net/dd/netherwingcore/proto/client/club_invitation.proto";
+
+// Notification sent when a club is added to the user's memberships.
+message ClubAddedNotification {
+  // The ID of the member agent who triggered the addition.
+  bgs.protocol.club.v1.MemberId agent_id = 1;
+  // The account that will receive the notification.
+  bgs.protocol.account.v1.AccountId subscriber_id = 2;
+  // Club membership description details.
+  bgs.protocol.club.v1.ClubMembershipDescription membership = 3;
+}
+
+// Notification sent when a user is removed from a club.
+message ClubRemovedNotification {
+  // The ID of the member agent who triggered the removal.
+  bgs.protocol.club.v1.MemberId agent_id = 1;
+  // The account that will receive the notification.
+  bgs.protocol.account.v1.AccountId subscriber_id = 2;
+  // The member who was removed.
+  bgs.protocol.club.v1.MemberId member_id = 3;
+  // The unique club identifier.
+  uint64 club_id = 4;
+  // The reason for club removal.
+  bgs.protocol.club.v1.ClubRemovedReason reason = 5;
+}
+
+// Notification sent when a new invitation is received.
+message ReceivedInvitationAddedNotification {
+  // The ID of the member agent who triggered the invitation.
+  bgs.protocol.club.v1.MemberId agent_id = 1;
+  // The account that will receive the notification.
+  bgs.protocol.account.v1.AccountId subscriber_id = 2;
+  // The details of the club invitation.
+  bgs.protocol.club.v1.ClubInvitation invitation = 3;
+}
+
+// Notification sent when an invitation is removed.
+message ReceivedInvitationRemovedNotification {
+  // The ID of the member agent who triggered the removal.
+  bgs.protocol.club.v1.MemberId agent_id = 1;
+  // The account that will receive the notification.
+  bgs.protocol.account.v1.AccountId subscriber_id = 2;
+  // The unique invitation identifier.
+  uint64 invitation_id = 3;
+  // The reason for invitation removal.
+  bgs.protocol.InvitationRemovedReason reason = 4;
+}
+
+// Notification for club shared settings changes.
+message SharedSettingsChangedNotification {
+  // The account agent that triggered the change.
+  bgs.protocol.account.v1.AccountId agent_id = 1;
+  // The account that will receive the notification.
+  bgs.protocol.account.v1.AccountId subscriber_id = 2;
+  // Assignment information about shared club settings.
+  bgs.protocol.club.v1.ClubSharedSettingsAssignment assignment = 4;
+}
+
+// Notification when a stream mention is added for the user.
+message StreamMentionAddedNotification {
+  // The ID of the member agent who triggered the mention.
+  bgs.protocol.club.v1.MemberId agent_id = 1;
+  // The account that will receive the notification.
+  bgs.protocol.account.v1.AccountId subscriber_id = 2;
+  // The mention details.
+  bgs.protocol.club.v1.StreamMention mention = 3;
+}
+
+// Notification when a stream mention is removed for the user.
+message StreamMentionRemovedNotification {
+  // The account agent that triggered the removal.
+  bgs.protocol.account.v1.AccountId agent_id = 1;
+  // The account that will receive the notification.
+  bgs.protocol.account.v1.AccountId subscriber_id = 2;
+  // The unique mention identifier.
+  bgs.protocol.TimeSeriesId mention_id = 3;
+}
+
+// Notification when a stream mention's view time is updated.
+message StreamMentionAdvanceViewTimeNotification {
+  // The account agent that triggered the update.
+  bgs.protocol.account.v1.AccountId agent_id = 1;
+  // The account that will receive the notification.
+  bgs.protocol.account.v1.AccountId subscriber_id = 2;
+  // The new view time, in milliseconds since epoch.
+  uint64 view_time = 3;
+}
+
+// Service for notifying the client about club membership events.
+service ClubMembershipListener {
+  // Called when a club is added to a user's memberships.
+  rpc OnClubAdded(ClubAddedNotification) returns (bgs.protocol.NO_RESPONSE);
+
+  // Called when a club is removed from a user's memberships.
+  rpc OnClubRemoved(ClubRemovedNotification) returns (bgs.protocol.NO_RESPONSE);
+
+  // Called when a received invitation is added.
+  rpc OnReceivedInvitationAdded(ReceivedInvitationAddedNotification) returns (bgs.protocol.NO_RESPONSE);
+
+  // Called when a received invitation is removed.
+  rpc OnReceivedInvitationRemoved(ReceivedInvitationRemovedNotification) returns (bgs.protocol.NO_RESPONSE);
+
+  // Called when shared club settings are changed.
+  rpc OnSharedSettingsChanged(SharedSettingsChangedNotification) returns (bgs.protocol.NO_RESPONSE);
+
+  // Called when a stream mention is added.
+  rpc OnStreamMentionAdded(StreamMentionAddedNotification) returns (bgs.protocol.NO_RESPONSE);
+
+  // Called when a stream mention is removed.
+  rpc OnStreamMentionRemoved(StreamMentionRemovedNotification) returns (bgs.protocol.NO_RESPONSE);
+
+  // Called when the view time for a stream mention is updated.
+  rpc OnStreamMentionAdvanceViewTime(StreamMentionAdvanceViewTimeNotification) returns (bgs.protocol.NO_RESPONSE);
+}
