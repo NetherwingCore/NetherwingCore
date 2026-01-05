@@ -85,7 +85,7 @@ public class ConfigurationController {
 
         write(line, configurationFilePath);
 
-        for (String s : List.of(configuration.getDescription().getValue())) {
+        for (String s : List.of(configuration.getDescription().getValues())) {
             String text = "# " + s;
             text = text + " ".repeat(100 - text.length() - 2) + " #";
             write(text, configurationFilePath);
@@ -99,7 +99,7 @@ public class ConfigurationController {
         write("#", configurationFilePath);
 
         configuration.getSections().forEach(section -> {
-            for (String s : List.of(section.getDescription().getValue())) {
+            for (String s : List.of(section.getDescription().getValues())) {
                 write("#    " + s, configurationFilePath);
             }
         });
@@ -111,7 +111,7 @@ public class ConfigurationController {
 
             write("", configurationFilePath);
             write(line, configurationFilePath);
-            for (String s : List.of(section.getDescription().getValue())) {
+            for (String s : List.of(section.getDescription().getValues())) {
                 write("# " + s, configurationFilePath);
             }
 
@@ -249,7 +249,7 @@ public class ConfigurationController {
 
     private void printDescriptions(Description description, Path configurationFilePath){
         if (description != null) {
-            List<String> descriptionLines =  List.of(description.getValue());
+            List<String> descriptionLines =  List.of(description.getValues());
             for(String s : descriptionLines) {
                 if (descriptionLines.getFirst().equals(s)) {
                     write("#        Description: " + s, configurationFilePath);
@@ -262,7 +262,7 @@ public class ConfigurationController {
 
     private void printFormats(Format format, Path configurationFilePath){
         if (format != null) {
-            List<String> formatLines = List.of(format.getValue());
+            List<String> formatLines = List.of(format.getValues());
             for(String s : formatLines) {
                 if (formatLines.getFirst().equals(s)) {
                     write("#        Format:      " + s, configurationFilePath);
@@ -275,7 +275,7 @@ public class ConfigurationController {
 
     private void printImportantNotes(ImportantNote importantNote, Path configurationFilePath){
         if (importantNote != null){
-            List<String> importantNoteLines = List.of(importantNote.getValue());
+            List<String> importantNoteLines = List.of(importantNote.getValues());
             for(String s : importantNoteLines) {
                 if (importantNoteLines.getFirst().equals(s)) {
                     write("#        Important:   " + s, configurationFilePath);
@@ -288,7 +288,7 @@ public class ConfigurationController {
 
     private void printDetails(Detail detail, Path configurationFilePath){
         if (detail != null){
-            List<String> detailLines = List.of(detail.getValue());
+            List<String> detailLines = List.of(detail.getValues());
             for (String s : detailLines){
                 if (detailLines.getFirst().equals(s)){
                     write("#        Details:     " + s, configurationFilePath);
@@ -301,7 +301,7 @@ public class ConfigurationController {
 
     private void printExamples(Example example, Path configurationFilePath){
         if (example != null) {
-            List<String> exampleLines = List.of(example.getValue());
+            List<String> exampleLines = List.of(example.getValues());
             for (String s : exampleLines){
                 if (exampleLines.getFirst().equals(s)){
                     write("#        Example:     " + s, configurationFilePath);
@@ -314,7 +314,7 @@ public class ConfigurationController {
 
     private void printDefaultValues(DefaultValue defaultValue, Path configurationFilePath){
         if (defaultValue != null) {
-            List<String> defaultValueLines = List.of(defaultValue.getValue());
+            List<String> defaultValueLines = List.of(defaultValue.getValues());
             for (String s : defaultValueLines){
                 if (defaultValueLines.getFirst().equals(s)){
                     write("#        Default:     " + s, configurationFilePath);
@@ -328,7 +328,7 @@ public class ConfigurationController {
     private void printObservations(Observations observations, Path configurationFilePath){
         if (observations != null){
             write("#", configurationFilePath);
-            List<String> observationLines = List.of(observations.getValue());
+            List<String> observationLines = List.of(observations.getValues());
             for (String s : observationLines) {
                 if (observationLines.getFirst().equals(s)){
                     write("#        " + s, configurationFilePath);
@@ -342,7 +342,7 @@ public class ConfigurationController {
     private void printDeveloperNotes(DeveloperNote developerNote, Path configurationFilePath){
         if (developerNote != null) {
             write("#", configurationFilePath);
-            List<String> developerNoteLines = List.of(developerNote.getValue());
+            List<String> developerNoteLines = List.of(developerNote.getValues());
             write("# Note to developers:", configurationFilePath);
             for (String s : developerNoteLines) {
                 write("#   " + s, configurationFilePath);

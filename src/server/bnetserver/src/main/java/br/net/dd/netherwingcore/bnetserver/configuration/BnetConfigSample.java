@@ -17,9 +17,37 @@ public class BnetConfigSample extends ConfigurationSample {
         setFileName("bnetserver.conf");
     }
 
+    public Configuration makeSample() {
+
+        Configuration configuration = new Configuration(
+                new Description("NetherwingCore Auth Server configuration file"),
+                "bnetserver"
+        );
+
+        Section exampleSection = new Section(new Description("EXAMPLE CONFIG"));
+        Group exampleGroup = new Group();
+        Item exampleItem = new Item(
+                new Description("Brief description what the variable is doing."),
+                new Detail("Details on how this variable is used."),
+                new Format("Expected formatting for the value of this variable."),
+                new ImportantNote("Annotation for important things about this variable."),
+                new Example("Example, i.e. if the value is a string"),
+                new Key("# Variable"),
+                new Value("0", NUMBER),
+                new DefaultValue("10 - (Enabled|Comment|Variable name in case of grouped config options)", "0  - (Disabled|Comment|Variable name in case of grouped config options)"),
+                new DeveloperNote("Copy this example to keep the formatting.", "Line breaks should be at column 100."),
+                new Observations("Additional notes")
+        );
+        exampleGroup.addItem(exampleItem);
+        exampleSection.addGroup(exampleGroup);
+        configuration.addSection(exampleSection);
+
+        return configuration;
+    }
+
     public Configuration createSample() {
 
-        return new Configuration(new Description("NetherCore Auth Server configuration file"), "bnetserver")
+        return new Configuration(new Description("NetherwingCore Auth Server configuration file"), "bnetserver")
                 .addSection(new Section(new Description("EXAMPLE CONFIG"))
                         .addGroup(new Group()
                                 .addItem(new Item(
