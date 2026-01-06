@@ -8,10 +8,7 @@ import br.net.dd.netherwingcore.common.stuff.IpAddress;
 import br.net.dd.netherwingcore.common.stuff.Resolver;
 import br.net.dd.netherwingcore.proto.client.GameUtilitiesServiceProto;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class RealmList {
@@ -126,9 +123,25 @@ public class RealmList {
 
     private void updateRealm(Realm realm, Realm.Battlenet.RealmHandle id, int build, String name,
                              String address, String localAddr, String localSubmask,
-                             int port, int icon, RealmFlags flag, int timezone,
+                             int port, int icon, Realm.RealmFlags flag, int timezone,
                              AccountType allowedSecurityLevel, float population) {
         // Implement the logic to update an individual Realm.
+    }
+
+    public static class RealmBuildInfo {
+
+        public static int build;
+        public static int majorVersion;
+        public static int minorVersion;
+        public static int bugfixVersion;
+        public static char[] hotfixVersion = new char[4];
+        public static byte[] winAuthSeed = new byte[16];
+        public static byte[] win64AuthSeed = new byte[16];
+        public static byte[] mac64AuthSeed = new byte[16];
+
+    }
+
+    public static class RealmMap extends HashMap<Realm.Battlenet.RealmHandle, Realm> {
     }
 
 }
