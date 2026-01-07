@@ -1,5 +1,8 @@
 package br.net.dd.netherwingcore.shared;
 
+import br.net.dd.netherwingcore.shared.json.ProtobufJSON;
+import com.google.protobuf.Message;
+
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 public class Main {

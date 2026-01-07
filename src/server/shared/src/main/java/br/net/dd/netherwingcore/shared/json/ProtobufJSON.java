@@ -24,7 +24,7 @@ public class ProtobufJSON {
         return deserializer.readMessage(json, message);
     }
 
-    public static class Serializer {
+    private static class Serializer {
 
         public void writeMessage(Message message) {
 
@@ -116,10 +116,69 @@ public class ProtobufJSON {
 
     }
 
-    public static class Deserializer {
+    private static class Deserializer {
+
         public boolean readMessage(String json, Message message) {
-            return false;
+
+            reader = new JsonReader(new java.io.StringReader(json));
+            try {
+                reader.beginObject();
+
+                Descriptors.Descriptor descriptor = message.getDescriptorForType();
+                List<Descriptors.FieldDescriptor> fields = descriptor.getFields();
+
+                while (reader.hasNext()) {
+                    String fieldName = reader.nextName();
+                    Descriptors.FieldDescriptor field = descriptor.findFieldByName(fieldName);
+                    if (field != null) {
+                        Object value = null;
+                        switch (field.getJavaType()) {
+                            case INT:
+                                value = reader.nextInt();
+                                break;
+                            case LONG:
+                                value = reader.nextLong();
+                                break;
+                            case FLOAT:
+                                value = (float) reader.nextDouble();
+                                break;
+                            case DOUBLE:
+                                value = reader.nextDouble();
+                                break;
+                            case BOOLEAN:
+                                value = reader.nextBoolean();
+                                break;
+                            case STRING:
+                                value = reader.nextString();
+                                break;
+                            case ENUM:
+                                String enumName = reader.nextString();
+                                value = field.getEnumType().findValueByName(enumName);
+                                break;
+                            case MESSAGE:
+                                break;
+                            default:
+                                reader.skipValue();
+                                break;
+                        }
+
+                        if (value != null) {
+                            message.toBuilder().setField(field, value);
+                        }
+
+                    } else {
+                        reader.skipValue();
+                    }
+                }
+
+                reader.endObject();
+                return true;
+            } catch (IOException e) {
+                return false;
+            }
+
         }
+
     }
 
 }
