@@ -1,5 +1,6 @@
 package br.net.dd.netherwingcore.shared.json;
 
+import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Message;
@@ -10,21 +11,25 @@ import java.util.List;
 public class ProtobufJSON {
 
     static JsonWriter writer;
+    static JsonReader reader;
 
-    public static String serialize(Message message){
+    public static String serialize(Message message) {
         Serializer serializer = new Serializer();
         serializer.writeMessage(message);
         return serializer.getString();
     }
 
-    public static boolean deserialize(String json, Message message){
+    public static boolean deserialize(String json, Message message) {
         Deserializer deserializer = new Deserializer();
         return deserializer.readMessage(json, message);
     }
 
-    public static class Serializer{
+    public static class Serializer {
 
         public void writeMessage(Message message) {
+
+            writer = new JsonWriter(new java.io.StringWriter());
+
             List<Descriptors.FieldDescriptor> fields = message.getDescriptorForType().getFields();
             try {
                 writer.beginObject();
@@ -42,7 +47,7 @@ public class ProtobufJSON {
         private void writeMessageField(Message message, Descriptors.FieldDescriptor field) {
             try {
                 writer.name(field.getName());
-                if(field.isRepeated()){
+                if (field.isRepeated()) {
                     writer.beginArray();
                     writeRepeatedMessageField(message, field);
                     writer.endArray();
@@ -55,8 +60,20 @@ public class ProtobufJSON {
         }
 
         private void writeSimpleMessageField(Message message, Descriptors.FieldDescriptor field) {
+            Object value = message.getField(field);
+            writeMessageFieldValue(field, value);
+        }
+
+        private void writeRepeatedMessageField(Message message, Descriptors.FieldDescriptor field) {
+            Object value = message.getField(field);
+            List<?> values = (List<?>) value;
+            values.forEach(item -> {
+                writeMessageFieldValue(field, item);
+            });
+        }
+
+        private void writeMessageFieldValue(Descriptors.FieldDescriptor field, Object value) {
             try {
-                Object value = message.getField(field);
                 switch (field.getJavaType()) {
                     case INT:
                         writer.value((Integer) value);
@@ -85,22 +102,21 @@ public class ProtobufJSON {
                     case MESSAGE:
                         writeMessage((Message) value);
                         break;
+                    default:
+                        break;
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
 
-        private void writeRepeatedMessageField(Message message, Descriptors.FieldDescriptor field) {
-
-        }
-
         public String getString() {
-            return null;
+            return writer.toString();
         }
+
     }
 
-    public static class Deserializer{
+    public static class Deserializer {
         public boolean readMessage(String json, Message message) {
             return false;
         }
