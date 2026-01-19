@@ -1,11 +1,13 @@
 package br.net.dd.netherwingcore.bnetserver.server;
 
+import br.net.dd.netherwingcore.bnetserver.server.session.AccountInfo;
+import br.net.dd.netherwingcore.bnetserver.server.session.ClientRequestHandler;
+import br.net.dd.netherwingcore.bnetserver.server.session.GameAccountInfo;
 import br.net.dd.netherwingcore.common.utilities.MessageBuffer;
 import br.net.dd.netherwingcore.database.QueryCallbackProcessor;
 import br.net.dd.netherwingcore.proto.client.AccountServiceProto.*;
 import br.net.dd.netherwingcore.proto.client.AuthenticationServiceProto.*;
 import br.net.dd.netherwingcore.proto.client.GameUtilitiesServiceProto.*;
-import br.net.dd.netherwingcore.proto.client.api.client.v2.AttributeTypesProto.*;
 import com.google.protobuf.Message;
 
 import java.sql.ResultSet;
@@ -16,6 +18,7 @@ import java.util.function.Consumer;
 public class Session {
 
     private MessageBuffer headerLengthBuffer;
+    private MessageBuffer readBuffer;
     private MessageBuffer headerBuffer;
     private MessageBuffer packetBuffer;
 
@@ -24,30 +27,33 @@ public class Session {
 
     private String locale;
     private String os;
-    private int build;
+    private Integer build;
     private String ipCountry;
     private byte[] clientSecret = new byte[32];
     private boolean authed;
     private QueryCallbackProcessor queryProcessor;
 
     private Map<Integer, Consumer<MessageBuffer>> responseCallbacks;
-    private int requestToken;
+    private Integer requestToken;
 
     // Handlers mapeados
     private static final Map<String, ClientRequestHandler> clientRequestHandlers = new HashMap<>();
 
-    @FunctionalInterface
-    private interface ClientRequestHandler {
-        int handle(Map<String, Variant> params, ClientResponse response);
-    }
-
-    public class LastPlayedCharacterInfo {
-    }
-
-    public class GameAccountInfo {
-    }
-
-    public class AccountInfo {
+    public Session() {
+        this.accountInfo = new AccountInfo();
+        this.gameAccountInfo = new GameAccountInfo();
+        this.locale = "";
+        this.os = "";
+        this.build = 0;
+        this.ipCountry = "";
+        this.authed = false;
+        this.queryProcessor = new QueryCallbackProcessor();
+        this.responseCallbacks = new HashMap<>();
+        this.requestToken = 1;
+        this.headerLengthBuffer = new MessageBuffer(4);
+        this.readBuffer = new MessageBuffer(1024);
+        this.headerBuffer = new MessageBuffer(128);
+        this.packetBuffer = new MessageBuffer(2048);
     }
 
     public void start() {
