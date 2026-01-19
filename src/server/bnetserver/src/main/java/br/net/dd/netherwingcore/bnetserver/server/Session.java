@@ -11,6 +11,8 @@ import br.net.dd.netherwingcore.proto.client.GameUtilitiesServiceProto.*;
 import br.net.dd.netherwingcore.shared.networking.Socket;
 import com.google.protobuf.Message;
 
+import java.io.IOException;
+import java.nio.channels.AsynchronousSocketChannel;
 import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,7 +44,8 @@ public class Session extends Socket {
     // Handlers mapeados
     private static final Map<String, ClientRequestHandler> clientRequestHandlers = new HashMap<>();
 
-    public Session() {
+    public Session() throws IOException {
+        super(AsynchronousSocketChannel.open());
         this.accountInfo = new AccountInfo();
         this.gameAccountInfo = new GameAccountInfo();
         this.locale = "";
@@ -128,7 +131,8 @@ public class Session extends Socket {
     protected void handshakeHandler(Exception error) {
     }
 
-    protected void readHandler() {
+    @Override
+    public void readHandler() {
     }
 
     private boolean readHeaderLengthHandler() {
