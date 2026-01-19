@@ -1,16 +1,13 @@
 package br.net.dd.netherwingcore.database.impl.auth;
 
 import br.net.dd.netherwingcore.database.Database;
-import br.net.dd.netherwingcore.database.StatementValue;
-
-import java.util.Map;
 
 import static br.net.dd.netherwingcore.database.ConnectionFlag.*;
 import static br.net.dd.netherwingcore.database.impl.auth.StatementName.*;
 
-public class LoginDatabase extends Database {
+public class AuthDatabase extends Database {
 
-    public LoginDatabase(Map<StatementName, StatementValue> statements) {
+    public AuthDatabase() {
         super();
     }
 
