@@ -8,6 +8,7 @@ import br.net.dd.netherwingcore.database.QueryCallbackProcessor;
 import br.net.dd.netherwingcore.proto.client.AccountServiceProto.*;
 import br.net.dd.netherwingcore.proto.client.AuthenticationServiceProto.*;
 import br.net.dd.netherwingcore.proto.client.GameUtilitiesServiceProto.*;
+import br.net.dd.netherwingcore.shared.networking.Socket;
 import com.google.protobuf.Message;
 
 import java.sql.ResultSet;
@@ -15,7 +16,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-public class Session {
+import static br.net.dd.netherwingcore.common.logging.Log.log;
+
+public class Session extends Socket {
 
     private MessageBuffer headerLengthBuffer;
     private MessageBuffer readBuffer;
@@ -57,6 +60,17 @@ public class Session {
     }
 
     public void start() {
+
+        String ipAddress = getRemoteAddress().toString();
+        log(getClientInfo() + " Accepted connection");
+
+        /**
+        // Verify that this IP is not in the ip_banned table
+         LoginDatabase.Execute(LoginDatabase.GetPreparedStatement(LOGIN_DEL_EXPIRED_IP_BANS));
+
+        LoginDatabasePreparedStatement stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_IP_INFO);
+        stmt.setString(0, ip_address);
+         */
     }
 
     public boolean update() {
