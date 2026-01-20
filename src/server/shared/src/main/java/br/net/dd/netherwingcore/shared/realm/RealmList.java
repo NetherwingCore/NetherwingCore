@@ -1,7 +1,6 @@
 package br.net.dd.netherwingcore.shared.realm;
 
-import br.net.dd.netherwingcore.common.AccountType;
-import br.net.dd.netherwingcore.common.LocaleConstant;
+import br.net.dd.netherwingcore.common.Common.*;
 import br.net.dd.netherwingcore.common.stuff.DeadlineTimer;
 import br.net.dd.netherwingcore.common.stuff.IoContext;
 import br.net.dd.netherwingcore.common.stuff.IpAddress;
@@ -124,7 +123,7 @@ public class RealmList {
     private void updateRealm(Realm realm, Realm.Battlenet.RealmHandle id, int build, String name,
                              String address, String localAddr, String localSubmask,
                              int port, int icon, Realm.RealmFlags flag, int timezone,
-                             AccountType allowedSecurityLevel, float population) {
+                             AccountTypes allowedSecurityLevel, float population) {
         // Implement the logic to update an individual Realm.
     }
 
