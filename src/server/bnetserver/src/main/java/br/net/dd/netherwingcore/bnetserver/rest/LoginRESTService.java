@@ -35,6 +35,7 @@ public class LoginRESTService {
             // Register endpoints
             server.createContext("/bnetserver/", new HandlerIndex());
             server.createContext("/bnetserver/login/", new HandlerLogin());
+            server.createContext("/bnetserver/login/srp/", new HandlePostLoginSrpChallenge());
             server.createContext("/bnetserver/gameAccounts/", new HandlerGetGameAccounts());
             server.createContext("/bnetserver/portal/", new HandlerGetPortal());
             server.createContext("/bnetserver/refreshLoginTicket/", new HandlerPostRefreshLoginTicket());
