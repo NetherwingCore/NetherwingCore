@@ -1,5 +1,45 @@
 package br.net.dd.netherwingcore.database.impl.auth;
 
+/**
+ * The {@code StatementName} enum represents a collection of SQL statement identifiers
+ * used for interacting with the login database in the NetherwingCore project.
+ *
+ * <p>Each constant in this enum follows a naming convention that indicates
+ * the type of database operation and the target data or table. The general naming
+ * scheme is as follows:</p>
+ *
+ * <pre>
+ * {DB}_{Operation}_{Description}
+ * </pre>
+ *
+ * <p>Where:</p>
+ * <ul>
+ *   <li>{@code DB} - Refers to the database context (e.g., LOGIN).</li>
+ *   <li>{@code Operation} - Describes the SQL operation, such as:
+ *     <ul>
+ *       <li>{@code SEL} - SELECT</li>
+ *       <li>{@code INS} - INSERT</li>
+ *       <li>{@code UPD} - UPDATE</li>
+ *       <li>{@code DEL} - DELETE</li>
+ *       <li>{@code REP} - REPLACE</li>
+ *     </ul>
+ *   </li>
+ *   <li>{@code Description} - Summarizes the purpose of the statement (e.g.,
+ *       accounts, bans, etc.).</li>
+ * </ul>
+ *
+ * <p>These enum values serve as standardized keys to identify corresponding
+ * SQL statements in the application's database implementation.</p>
+ *
+ * <p><strong>Example Definition:</strong></p>
+ * <pre>
+ * LOGIN_SEL_REALMLIST
+ * </pre>
+ * This would represent a SQL SELECT query to retrieve data from the realm list table in the login database.
+ *
+ * <p>When updating multiple fields in a given operation, consider referring
+ * to the calling function name to derive a more descriptive suffix for consistency.</p>
+ */
 public enum StatementName {
     /*  Naming standard for defines:
         {DB}_{SEL/INS/UPD/DEL/REP}_{Summary of data changed}

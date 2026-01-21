@@ -1,18 +1,67 @@
 package br.net.dd.netherwingcore.database.impl.auth;
 
+import br.net.dd.netherwingcore.database.ConnectionFlag;
 import br.net.dd.netherwingcore.database.Database;
 
 import static br.net.dd.netherwingcore.database.ConnectionFlag.*;
 import static br.net.dd.netherwingcore.database.impl.auth.StatementName.*;
 
-public class AuthDatabase extends Database {
+/**
+ * The {@code LoginDatabase} class represents a specialized implementation of the {@link Database}
+ * specifically designed to handle authentication and account operations in the application.
+ *
+ * <p>This class extends the base {@link Database} class and provides a set of SQL statements,
+ * configured through the {@code prepareStatement} method, which are necessary for authentication,
+ * account management, ban management, logging, and other related operations.
+ *
+ * <p>The SQL statements defined here interact with various database tables such as:
+ * <ul>
+ *   <li>{@code realmlist}</li>
+ *   <li>{@code ip_banned}</li>
+ *   <li>{@code account}</li>
+ *   <li>{@code battlenet_accounts}</li>
+ *   <li>{@code realmcharacters}</li>
+ *   <li>{@code logs}</li>
+ *   <li>{@code account_access}</li>
+ * </ul>
+ *
+ * <p>This class is responsible for mapping SQL statements to predefined constants,
+ * ensuring structured operations and managing connections in both synchronous and asynchronous modes.
+ */
+public class LoginDatabase extends Database {
 
-    public AuthDatabase() {
+    /**
+     * Constructs a new {@code LoginDatabase} instance.
+     * This constructor initializes the parent {@link Database} class.
+     */
+    public LoginDatabase() {
         super();
     }
 
+    /**
+     * Configures and prepares all the necessary SQL statements required for
+     * authentication, account operations, and other functionalities.
+     *
+     * <p>This method defines statements for:
+     * <ul>
+     *     <li>Managing realm information (e.g., updating population, deleting expired bans)</li>
+     *     <li>Handling account bans (e.g., banning, unbanning, retrieving ban details)</li>
+     *     <li>Account authentication and details retrieval</li>
+     *     <li>Session handling (e.g., session keys and login states)</li>
+     *     <li>Logging account activities</li>
+     *     <li>Handling account-wide features such as mounts, toys, and heirlooms</li>
+     *     <li>Managing Battle Pets and Transmogrification data</li>
+     *     <li>Managing account and permission settings</li>
+     * </ul>
+     *
+     * <p>All statements are mapped to constants in {@link StatementName} and flagged using types
+     * from {@link ConnectionFlag}, determining whether the connection is {@code CONNECTION_SYNC},
+     * {@code CONNECTION_ASYNC}, or {@code CONNECTION_BOTH}.
+     */
     @Override
     public void loadStatements() {
+
+        // SQL statements related to realm management, authentication, bans and more.
 
         prepareStatement(LOGIN_SEL_REALMLIST, "SELECT id, name, address, localAddress, address3, address4, port, icon, flag, timezone, allowedSecurityLevel, population, gamebuild, Region, Battlegroup FROM realmlist WHERE flag <> 3 ORDER BY name", CONNECTION_SYNC);
         prepareStatement(LOGIN_UPD_REALM_POPULATION, "UPDATE realmlist SET population = ? WHERE id = ?", CONNECTION_ASYNC);

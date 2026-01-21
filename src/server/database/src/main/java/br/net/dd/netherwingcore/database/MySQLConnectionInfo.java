@@ -4,6 +4,30 @@ import br.net.dd.netherwingcore.common.utilities.Util;
 
 import java.util.List;
 
+/**
+ * The {@code MySQLConnectionInfo} class encapsulates information required to set up a MySQL
+ * connection. It parses a connection string formatted as a semicolon-delimited series of values
+ * and provides getter methods to access the connection parameters.
+ *
+ * <p>Expected format for the input connection string:</p>
+ * <ul>
+ *     <li>{@code host};{@code portOrSocket};{@code user};{@code password};{@code database}[;{@code ssl}]</li>
+ * </ul>
+ * Where the {@code ssl} parameter is optional.
+ *
+ * <p><b>Example usage:</b></p>
+ * <pre>
+ * MySQLConnectionInfo connectionInfo = new MySQLConnectionInfo("localhost;3306;root;password;mydb;true");
+ * System.out.println(connectionInfo.getHost()); // Outputs: localhost
+ * System.out.println(connectionInfo.getPortOrSocket()); // Outputs: 3306
+ * </pre>
+ *
+ * <p>This class uses a utility method {@code Util.tokenize()} to split the input string into
+ * tokens. If the number of tokens is not valid (neither 5 nor 6), the object is left uninitialized.</p>
+ *
+ * <p><b>Note:</b> This class does not enforce validation or type checking on individual parameter values.</p>
+ *
+ */
 public class MySQLConnectionInfo {
 
     private String user;
