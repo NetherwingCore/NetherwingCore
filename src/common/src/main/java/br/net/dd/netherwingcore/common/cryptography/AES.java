@@ -11,12 +11,29 @@ import java.util.Arrays;
 
 import static br.net.dd.netherwingcore.common.logging.Log.log;
 
+/**
+ * Utility class for AES (Advanced Encryption Standard) based cryptography operations.
+ * This class supports both encryption and decryption of data using AES GCM (Galois/Counter Mode).
+ * It provides functionality for key, IV (Initialization Vector), and tag management.
+ *
+ * <p>
+ * Features:
+ * - Supports AES-128 encryption mode.
+ * - Provides wrappers for key, IV, and tag with automatic validation.
+ * - Handles encryption and decryption integrity checks.
+ * - Includes optional processing without integrity verification (uses AES/CTR mode).
+ * </p>
+ */
 public class AES {
 
     public static final int IV_SIZE_BYTES = 12;
     public static final int KEY_SIZE_BYTES = 16;
     public static final int TAG_SIZE_BYTES = 12;
 
+    /**
+     * Represents an AES key encapsulating its byte data and validation logic.
+     * Ensures the key length conforms to {@link AES#KEY_SIZE_BYTES}.
+     */
     public record Key(byte[] data) {
         public Key(byte[] data) {
             if (data.length != KEY_SIZE_BYTES) {
@@ -25,6 +42,9 @@ public class AES {
             this.data = data.clone();
         }
 
+        /**
+         * Clears the key data by overwriting its byte array with zeroes.
+         */
         public void clear() {
             Arrays.fill(data, (byte) 0);
         }
@@ -35,6 +55,10 @@ public class AES {
         }
     }
 
+    /**
+     * Represents an AES Initialization Vector (IV).
+     * Validates the size of the IV matches {@link AES#IV_SIZE_BYTES}.
+     */
     public record IV(byte[] data) {
         public IV(byte[] data) {
             if (data.length != IV_SIZE_BYTES) {
@@ -43,6 +67,9 @@ public class AES {
             this.data = data.clone();
         }
 
+        /**
+         * Clears the IV data by overwriting its byte array with zeroes.
+         */
         public void clear() {
             Arrays.fill(data, (byte) 0);
         }
@@ -53,6 +80,10 @@ public class AES {
         }
     }
 
+    /**
+     * Represents an AES authentication tag.
+     * Validates the size of the tag matches {@link AES#TAG_SIZE_BYTES}.
+     */
     public record Tag(byte[] data) {
         public Tag(byte[] data) {
             if (data.length != TAG_SIZE_BYTES) {
@@ -61,6 +92,9 @@ public class AES {
             this.data = data.clone();
         }
 
+        /**
+         * Clears the tag data by overwriting its byte array with zeroes.
+         */
         public void clear() {
             Arrays.fill(data, (byte) 0);
         }
@@ -75,17 +109,34 @@ public class AES {
     private Cipher cipher;
     private SecretKey secretKey;
 
+    /**
+     * Constructs an AES instance for encryption or decryption.
+     *
+     * @param encrypting true if this instance is for encryption, false for decryption.
+     * @param keySizeBits the size of the AES key in bits (must be 128, 192, or 256).
+     */
     public AES(boolean encrypting, int keySizeBits) {
         this.encrypting = encrypting;
         this.initCtx(keySizeBits);
     }
 
+    /**
+     * Constructs an AES instance for encryption or decryption with a default key size of 128 bits.
+     *
+     * @param encrypting true if this instance is for encryption, false for decryption.
+     */
     public AES(boolean encrypting) {
         this.encrypting = encrypting;
         int keySizeBits = 128; // AES-128
         this.initCtx(keySizeBits);
     }
 
+    /**
+     * Initializes the cipher context with the specified key size.
+     *
+     * @param keySizeBits the size of the AES key in bits (valid values: 128, 192, 256).
+     * @throws IllegalArgumentException if an invalid key size is provided.
+     */
     private void initCtx(int keySizeBits) {
         if (keySizeBits != 128 && keySizeBits != 192 && keySizeBits != 256) {
             throw new IllegalArgumentException("Invalid AES key size: " + keySizeBits);
@@ -99,6 +150,12 @@ public class AES {
         }
     }
 
+    /**
+     * Initializes the AES instance with the specified key.
+     *
+     * @param key the AES key as a byte array.
+     * @throws IllegalArgumentException if the key length is not {@link AES#KEY_SIZE_BYTES}.
+     */
     public void init(byte[] key) {
         if (key.length != KEY_SIZE_BYTES) {
             throw new IllegalArgumentException("Key must be " + KEY_SIZE_BYTES + " bytes");
@@ -106,10 +163,24 @@ public class AES {
         this.init(new Key(key));
     }
 
+    /**
+     * Initializes the AES instance with the specified {@link Key}.
+     *
+     * @param key the AES key encapsulated in a {@link Key} object.
+     */
     public void init(Key key) {
         this.secretKey = new SecretKeySpec(key.data(), "AES");
     }
 
+    /**
+     * Processes encryption or decryption for AES using the specified IV and Tag.
+     *
+     * @param iv the initialization vector used for AES GCM mode.
+     * @param data the input data for encryption or decryption.
+     * @param length the length of the data to process.
+     * @param tag the output tag (for encryption) or input tag (for decryption).
+     * @return true if the operation succeeds, false otherwise.
+     */
     public boolean process(IV iv, byte[] data, int length, Tag tag) {
         try {
             if (iv.data.length != IV_SIZE_BYTES) {
@@ -151,6 +222,16 @@ public class AES {
         }
     }
 
+    /**
+     * Processes decryption without integrity checks using AES CTR (Counter Mode).
+     *
+     * <p>Note: This mode does not provide data authenticity or integrity validation.</p>
+     *
+     * @param iv the initialization vector for AES CTR mode.
+     * @param data the input ciphertext for decryption.
+     * @param partialLength the length of the input data.
+     * @return true if the operation is successful, false otherwise.
+     */
     public boolean processNoIntegrityCheck(IV iv, byte[] data, int partialLength) {
         try {
             if (encrypting) {
