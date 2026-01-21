@@ -1,9 +1,8 @@
 package br.net.dd.netherwingcore.database;
 
-import br.net.dd.netherwingcore.database.impl.auth.StatementName;
-
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Abstract class that represents a database handler. This class is responsible for managing
@@ -15,42 +14,54 @@ import java.util.Map;
  */
 public abstract class Database {
 
-    /**
-     * A map that stores SQL statements indexed by their names.
-     * The name is an instance of {@link StatementName}, and the value includes the SQL query
-     * and related connection metadata.
-     */
-    private final Map<StatementName, StatementValue> statements;
+    /** Collection of SQL statements managed by this database handler. */
+    private final List<Statement> statementList;
 
     /**
-     * Default constructor that initializes the SQL statements map
-     * and loads predefined statements by calling {@link #loadStatements()}.
+     * Constructs a new {@code Database} instance and initializes the statement collection.
+     * Subclasses should call {@link #loadStatements()} to populate the collection with
+     * their specific SQL statements.
      */
     protected Database() {
-        this.statements = new HashMap<>();
+        this.statementList = new ArrayList<>();
         loadStatements();
     }
 
     /**
      * Prepares and adds a new SQL statement to the collection.
      *
-     * @param name           The unique name of the SQL statement (an instance of {@link StatementName}).
+     * @param name           The unique name of the SQL statement.
      * @param query          The SQL query string associated with the statement.
      * @param connectionFlag Additional metadata defining the SQL statement's connection requirements.
      */
-    protected void prepareStatement(StatementName name, String query, ConnectionFlag connectionFlag){
-        this.statements.put(name, new StatementValue(query, connectionFlag));
+    protected void prepareStatement(String name, String query, ConnectionFlag connectionFlag){
+        this.statementList.add(new Statement(name, query, connectionFlag));
     };
 
     /**
-     * Retrieves a prepared SQL statement by its name.
+     * Prepares and adds a new SQL statement to the collection.
+     *
+     * @param statement An instance of {@link Statement} containing the SQL query and metadata.
+     */
+    protected void prepareStatement(Statement statement){
+        this.statementList.add(statement);
+    }
+
+    /**
+     * Retrieves a SQL statement by its unique name.
      *
      * @param name The unique name of the SQL statement to retrieve.
-     * @return An instance of {@link StatementValue} containing the SQL query and metadata,
-     *         or {@code null} if no statement with the given name exists.
+     * @return The {@link Statement} associated with the given name, or {@code null} if not found.
      */
-    public StatementValue get(StatementName name) {
-        return this.statements.get(name);
+    public Statement get(String name) {
+        AtomicReference<Statement> ref = new AtomicReference<>(null);
+        this.statementList.forEach(statement -> {
+            if (statement.name().equals(name)) {
+                ref.set(statement);
+                return;
+            }
+        });
+        return ref.get();
     }
 
     /**
