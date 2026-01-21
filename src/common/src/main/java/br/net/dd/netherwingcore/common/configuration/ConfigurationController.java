@@ -15,10 +15,41 @@ import java.util.concurrent.atomic.AtomicReference;
 import static br.net.dd.netherwingcore.common.logging.Log.log;
 import static br.net.dd.netherwingcore.common.serialization.FileManager.*;
 
+/**
+ * The `ConfigurationController` class is a central handler for managing
+ * configuration files in the application. It oversees the creation, loading,
+ * and modification of configurations defined in a {@link ConfigurationSample}.
+ *
+ * The controller ensures that the necessary configuration files exist, and if
+ * not, it creates a default one based on the provided {@link ConfigurationSample}.
+ * It also allows for the configuration settings to be later retrieved and updated
+ * as needed.
+ *
+ * <p>
+ * Features of this class:
+ * - Reads configuration files and loads key-value pairs for the application.
+ * - Automatically creates default configuration files when they do not exist.
+ * - Supports validation and formatting of configuration entries.
+ * - Provides utilities to print various meta-information about the configuration.
+ * <p>
+ * It internally utilizes helper classes such as {@link Item}, {@link Field},
+ * and utility methods from the {@link Util}, and serialization functionalities
+ * from the `FileManager`.
+ */
 public class ConfigurationController {
 
+    /**
+     * Holds the configuration object created from the provided {@link ConfigurationSample}.
+     */
     private final Configuration configuration;
 
+    /**
+     * Initializes the `ConfigurationController` by validating the existence of a configuration file.
+     * If a configuration file does not exist, it creates one using the data from the given {@link ConfigurationSample}.
+     *
+     * @param configurationSample An instance containing the default sample configuration
+     *                            and metadata for handling the file.
+     */
     public ConfigurationController(ConfigurationSample configurationSample) {
         String jarLocation = Util.getJarLocation();
         String filePath = jarLocation + File.separator + configurationSample.getFileName();
@@ -46,10 +77,21 @@ public class ConfigurationController {
         }
     }
 
+    /**
+     * Retrieves the current `Configuration` stored in this controller.
+     *
+     * @return The {@link Configuration} instance being handled by this controller.
+     */
     public Configuration getConfiguration() {
         return configuration;
     }
 
+    /**
+     * Loads a configuration file from a specified path and parses its key-value pairs.
+     * The parsed values are then applied to the fields of corresponding configuration items.
+     *
+     * @param configurationFilePath The {@link Path} to the configuration file to be loaded.
+     */
     private void loadConfiguration(Path configurationFilePath) {
 
         log("Loading configuration file: " + configurationFilePath.toString());
@@ -77,6 +119,13 @@ public class ConfigurationController {
 
     }
 
+    /**
+     * Creates a default configuration file at the specified path.
+     * The file is built using the fields defined in the given {@link Configuration} object.
+     *
+     * @param configuration        The {@link Configuration} that contains the default settings.
+     * @param configurationFilePath The {@link Path} to create the new configuration file.
+     */
     private void createFile(Configuration configuration, Path configurationFilePath) {
 
         log("Creating default configuration file: " + configurationFilePath.toFile().getName());
@@ -247,6 +296,12 @@ public class ConfigurationController {
 
     }
 
+    /**
+     * Prints the description lines for a configuration field, if applicable, to the given file path.
+     *
+     * @param description           The {@link Description} to be printed, if not null.
+     * @param configurationFilePath The {@link Path} file to write the description to.
+     */
     private void printDescriptions(Description description, Path configurationFilePath){
         if (description != null) {
             List<String> descriptionLines =  List.of(description.getValues());
@@ -260,6 +315,12 @@ public class ConfigurationController {
         }
     }
 
+    /**
+     * Prints the format lines for a configuration field, if applicable, to the given file path.
+     *
+     * @param format                The {@link Format} to be printed, if not null.
+     * @param configurationFilePath The {@link Path} file to write the format to.
+     */
     private void printFormats(Format format, Path configurationFilePath){
         if (format != null) {
             List<String> formatLines = List.of(format.getValues());
@@ -273,6 +334,12 @@ public class ConfigurationController {
         }
     }
 
+    /**
+     * Prints important notes for a configuration field, if applicable, to the given file path.
+     *
+     * @param importantNote         The {@link ImportantNote} to be printed, if not null.
+     * @param configurationFilePath The {@link Path} file to write the important notes to.
+     */
     private void printImportantNotes(ImportantNote importantNote, Path configurationFilePath){
         if (importantNote != null){
             List<String> importantNoteLines = List.of(importantNote.getValues());
@@ -286,6 +353,12 @@ public class ConfigurationController {
         }
     }
 
+    /**
+     * Prints details for a configuration field, if applicable, to the given file path.
+     *
+     * @param detail                The {@link Detail} to be printed, if not null.
+     * @param configurationFilePath The {@link Path} file to write the details to.
+     */
     private void printDetails(Detail detail, Path configurationFilePath){
         if (detail != null){
             List<String> detailLines = List.of(detail.getValues());
@@ -299,6 +372,12 @@ public class ConfigurationController {
         }
     }
 
+    /**
+     * Prints example lines for a configuration field, if applicable, to the given file path.
+     *
+     * @param example               The {@link Example} to be printed, if not null.
+     * @param configurationFilePath The {@link Path} file to write the examples to.
+     */
     private void printExamples(Example example, Path configurationFilePath){
         if (example != null) {
             List<String> exampleLines = List.of(example.getValues());
@@ -312,6 +391,12 @@ public class ConfigurationController {
         }
     }
 
+    /**
+     * Prints default values for a configuration field, if applicable, to the given file path.
+     *
+     * @param defaultValue          The {@link DefaultValue} to be printed, if not null.
+     * @param configurationFilePath The {@link Path} file to write the default values to.
+     */
     private void printDefaultValues(DefaultValue defaultValue, Path configurationFilePath){
         if (defaultValue != null) {
             List<String> defaultValueLines = List.of(defaultValue.getValues());
@@ -325,6 +410,12 @@ public class ConfigurationController {
         }
     }
 
+    /**
+     * Prints observation lines for a configuration field, if applicable, to the given file path.
+     *
+     * @param observations          The {@link Observations} to be printed, if not null.
+     * @param configurationFilePath The {@link Path} file to write the observations to.
+     */
     private void printObservations(Observations observations, Path configurationFilePath){
         if (observations != null){
             write("#", configurationFilePath);
@@ -339,6 +430,12 @@ public class ConfigurationController {
         }
     }
 
+    /**
+     * Prints developer notes for a configuration field, if applicable, to the given file path.
+     *
+     * @param developerNote         The {@link DeveloperNote} to be printed, if not null.
+     * @param configurationFilePath The {@link Path} file to write the developer notes to.
+     */
     private void printDeveloperNotes(DeveloperNote developerNote, Path configurationFilePath){
         if (developerNote != null) {
             write("#", configurationFilePath);
