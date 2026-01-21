@@ -25,6 +25,10 @@ public class AES {
             this.data = data.clone();
         }
 
+        public void clear() {
+            Arrays.fill(data, (byte) 0);
+        }
+
         @Override
         public byte[] data() {
             return data.clone();
@@ -39,6 +43,10 @@ public class AES {
             this.data = data.clone();
         }
 
+        public void clear() {
+            Arrays.fill(data, (byte) 0);
+        }
+
         @Override
         public byte[] data() {
             return data.clone();
@@ -51,6 +59,10 @@ public class AES {
                 throw new IllegalArgumentException("IV must be " + TAG_SIZE_BYTES + " bytes long");
             }
             this.data = data.clone();
+        }
+
+        public void clear() {
+            Arrays.fill(data, (byte) 0);
         }
 
         @Override
