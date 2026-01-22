@@ -1,8 +1,9 @@
-package br.net.dd.netherwingcore.database.impl.world;
+package br.net.dd.netherwingcore.database.implementation;
 
+import br.net.dd.netherwingcore.common.cache.Cache;
 import br.net.dd.netherwingcore.database.Database;
 
-import static br.net.dd.netherwingcore.database.ConnectionFlag.*;
+import static br.net.dd.netherwingcore.database.MySQLConnection.ConnectionFlags.*;
 
 /**
  * The {@code WorldDatabase} class represents a specialized implementation of the {@link Database}
@@ -21,7 +22,10 @@ public class WorldDatabase extends Database {
      * Constructs a new {@code WorldDatabase} instance.
      * This constructor initializes the parent {@link Database} class.
      */
-    public WorldDatabase() { super(); }
+    public WorldDatabase() {
+        String worldDatabaseInfo = Cache.getConfiguration().get("WorldDatabaseInfo", "127.0.0.1;3306;trinity;trinity;world");
+        super(worldDatabaseInfo);
+    }
 
     /**
      * Loads SQL statements specific to the WorldDatabase.

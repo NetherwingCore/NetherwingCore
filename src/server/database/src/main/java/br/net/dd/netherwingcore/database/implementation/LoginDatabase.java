@@ -1,8 +1,9 @@
-package br.net.dd.netherwingcore.database.impl.auth;
+package br.net.dd.netherwingcore.database.implementation;
 
+import br.net.dd.netherwingcore.common.cache.Cache;
 import br.net.dd.netherwingcore.database.Database;
 
-import static br.net.dd.netherwingcore.database.ConnectionFlag.*;
+import static br.net.dd.netherwingcore.database.MySQLConnection.ConnectionFlags.*;
 
 /**
  * The {@code LoginDatabase} class extends the abstract {@link Database} class
@@ -19,7 +20,8 @@ public class LoginDatabase extends Database {
      * This constructor initializes the parent {@link Database} class.
      */
     public LoginDatabase() {
-        super();
+        String loginDatabaseInfo = Cache.getConfiguration().get("LoginDatabaseInfo", "127.0.0.1;3306;trinity;trinity;auth");
+        super(loginDatabaseInfo);
     }
 
     /**

@@ -1,8 +1,9 @@
-package br.net.dd.netherwingcore.database.impl.shop;
+package br.net.dd.netherwingcore.database.implementation;
 
+import br.net.dd.netherwingcore.common.cache.Cache;
 import br.net.dd.netherwingcore.database.Database;
 
-import static br.net.dd.netherwingcore.database.ConnectionFlag.*;
+import static br.net.dd.netherwingcore.database.MySQLConnection.ConnectionFlags.*;
 
 /**
  * The {@code ShopDatabase} class represents a specialized implementation of the {@link Database}
@@ -21,7 +22,10 @@ public class ShopDatabase extends Database {
      * Constructs a new {@code ShopDatabase} instance.
      * This constructor initializes the parent {@link Database} class.
      */
-    public ShopDatabase() { super(); }
+    public ShopDatabase() {
+        String shopDatabaseInfo = Cache.getConfiguration().get("ShopDatabaseInfo", "127.0.0.1;3306;trinity;trinity;shop");
+        super(shopDatabaseInfo);
+    }
 
     /**
      * Loads SQL statements specific to the ShopDatabase.

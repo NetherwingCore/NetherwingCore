@@ -1,8 +1,9 @@
-package br.net.dd.netherwingcore.database.impl.hotfix;
+package br.net.dd.netherwingcore.database.implementation;
 
+import br.net.dd.netherwingcore.common.cache.Cache;
 import br.net.dd.netherwingcore.database.Database;
 
-import static br.net.dd.netherwingcore.database.ConnectionFlag.*;
+import static br.net.dd.netherwingcore.database.MySQLConnection.ConnectionFlags.*;
 
 /**
  * The {@code HotfixDatabase} class represents a specialized implementation of the {@link Database}
@@ -21,7 +22,10 @@ public class HotfixDatabase extends Database {
      * Constructs a new {@code HotfixDatabase} instance.
      * This constructor initializes the parent {@link Database} class.
      */
-    public HotfixDatabase() { super(); }
+    public HotfixDatabase() {
+        String hotfixDatabaseInfo = Cache.getConfiguration().get("HotfixDatabaseInfo", "127.0.0.1;3306;trinity;trinity;hotfix");
+        super(hotfixDatabaseInfo);
+    }
 
     /**
      * Loads SQL statements specific to the HotfixDatabase.

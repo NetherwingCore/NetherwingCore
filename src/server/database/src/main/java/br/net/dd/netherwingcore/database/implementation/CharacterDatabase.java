@@ -1,8 +1,9 @@
-package br.net.dd.netherwingcore.database.impl.character;
+package br.net.dd.netherwingcore.database.implementation;
 
+import br.net.dd.netherwingcore.common.cache.Cache;
 import br.net.dd.netherwingcore.database.Database;
 
-import static br.net.dd.netherwingcore.database.ConnectionFlag.*;
+import static br.net.dd.netherwingcore.database.MySQLConnection.ConnectionFlags.*;
 
 /**
  * The {@code CharacterDatabase} class represents a specialized implementation of the {@link Database}
@@ -21,7 +22,10 @@ public class CharacterDatabase extends Database {
      * Constructs a new {@code CharacterDatabase} instance.
      * This constructor initializes the parent {@link Database} class.
      */
-    public CharacterDatabase() { super(); }
+    public CharacterDatabase() {
+        String characterDatabaseInfo = Cache.getConfiguration().get("CharacterDatabaseInfo", "127.0.0.1;3306;trinity;trinity;character");
+        super(characterDatabaseInfo);
+    }
 
     @Override
     public void loadStatements() {

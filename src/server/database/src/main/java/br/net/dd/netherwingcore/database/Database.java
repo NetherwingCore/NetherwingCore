@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * <p>The class provides mechanisms to add SQL statements to a collection and retrieve them
  * by their unique statement names.
  */
-public abstract class Database {
+public abstract class Database extends MySQLConnection {
 
     /** Collection of SQL statements managed by this database handler. */
     private final List<Statement> statementList;
@@ -22,7 +22,8 @@ public abstract class Database {
      * Subclasses should call {@link #loadStatements()} to populate the collection with
      * their specific SQL statements.
      */
-    protected Database() {
+    protected Database(String databaseInfoString) {
+        super(new MySQLConnectionInfo(databaseInfoString));
         this.statementList = new ArrayList<>();
         loadStatements();
     }
@@ -34,7 +35,7 @@ public abstract class Database {
      * @param query          The SQL query string associated with the statement.
      * @param connectionFlag Additional metadata defining the SQL statement's connection requirements.
      */
-    protected void prepareStatement(String name, String query, ConnectionFlag connectionFlag){
+    protected void prepareStatement(String name, String query, ConnectionFlags connectionFlag){
         this.statementList.add(new Statement(name, query, connectionFlag));
     };
 
