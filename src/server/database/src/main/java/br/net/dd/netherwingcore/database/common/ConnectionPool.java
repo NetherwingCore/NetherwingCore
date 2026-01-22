@@ -1,4 +1,4 @@
-package br.net.dd.netherwingcore.database;
+package br.net.dd.netherwingcore.database.common;
 
 import com.mysql.cj.jdbc.MysqlConnectionPoolDataSource;
 
@@ -50,4 +50,13 @@ public class ConnectionPool {
         }
     }
 
+    public void closeAllConnections() {
+        pool.forEach(conn -> {
+            try {
+                conn.close();
+            } catch (SQLException e) {
+                System.out.println("Failed to close pooled connection: " + e.getMessage());
+            }
+        });
+    }
 }
