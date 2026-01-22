@@ -4,7 +4,6 @@ import br.net.dd.netherwingcore.bnetserver.server.session.AccountInfo;
 import br.net.dd.netherwingcore.bnetserver.server.session.ClientRequestHandler;
 import br.net.dd.netherwingcore.bnetserver.server.session.GameAccountInfo;
 import br.net.dd.netherwingcore.common.utilities.MessageBuffer;
-import br.net.dd.netherwingcore.database.QueryCallbackProcessor;
 import br.net.dd.netherwingcore.proto.client.AccountServiceProto.*;
 import br.net.dd.netherwingcore.proto.client.AuthenticationServiceProto.*;
 import br.net.dd.netherwingcore.proto.client.GameUtilitiesServiceProto.*;
@@ -36,7 +35,6 @@ public class Session extends Socket {
     private String ipCountry;
     private byte[] clientSecret = new byte[32];
     private boolean authed;
-    private QueryCallbackProcessor queryProcessor;
 
     private Map<Integer, Consumer<MessageBuffer>> responseCallbacks;
     private Integer requestToken;
@@ -53,7 +51,6 @@ public class Session extends Socket {
         this.build = 0;
         this.ipCountry = "";
         this.authed = false;
-        this.queryProcessor = new QueryCallbackProcessor();
         this.responseCallbacks = new HashMap<>();
         this.requestToken = 1;
         this.headerLengthBuffer = new MessageBuffer(4);
