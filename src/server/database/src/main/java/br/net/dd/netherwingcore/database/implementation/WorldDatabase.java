@@ -18,13 +18,27 @@ import static br.net.dd.netherwingcore.database.MySQLConnection.ConnectionFlags.
  */
 public class WorldDatabase extends Database {
 
+    private static WorldDatabase instance;
+
     /**
      * Constructs a new {@code WorldDatabase} instance.
      * This constructor initializes the parent {@link Database} class.
      */
-    public WorldDatabase() {
+    private WorldDatabase() {
         String worldDatabaseInfo = Cache.getConfiguration().get("WorldDatabaseInfo", "127.0.0.1;3306;trinity;trinity;world");
         super(worldDatabaseInfo);
+    }
+
+    /**
+     * Provides a singleton instance of the {@code WorldDatabase}.
+     *
+     * @return the singleton instance of {@code WorldDatabase}
+     */
+    public static synchronized WorldDatabase getInstance() {
+        if (instance == null) {
+            instance = new WorldDatabase();
+        }
+        return  instance;
     }
 
     /**

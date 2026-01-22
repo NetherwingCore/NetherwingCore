@@ -18,13 +18,27 @@ import static br.net.dd.netherwingcore.database.MySQLConnection.ConnectionFlags.
  */
 public class HotfixDatabase extends Database {
 
+    private static HotfixDatabase instance;
+
     /**
      * Constructs a new {@code HotfixDatabase} instance.
      * This constructor initializes the parent {@link Database} class.
      */
-    public HotfixDatabase() {
+    private HotfixDatabase() {
         String hotfixDatabaseInfo = Cache.getConfiguration().get("HotfixDatabaseInfo", "127.0.0.1;3306;trinity;trinity;hotfix");
         super(hotfixDatabaseInfo);
+    }
+
+    /**
+     * Retrieves the singleton instance of the {@code HotfixDatabase}.
+     *
+     * @return the singleton instance of {@code HotfixDatabase}
+     */
+    public static synchronized HotfixDatabase getInstance() {
+        if (instance == null) {
+            instance = new HotfixDatabase();
+        }
+        return  instance;
     }
 
     /**
@@ -33,6 +47,9 @@ public class HotfixDatabase extends Database {
      */
     @Override
     public void loadStatements() {
+
+        clearStatements();
+
         prepareStatement("NONE", "SELECT * FROM `realm_list`", CONNECTION_ASYNC);
     }
 }

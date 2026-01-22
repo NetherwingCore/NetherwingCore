@@ -18,13 +18,27 @@ import static br.net.dd.netherwingcore.database.MySQLConnection.ConnectionFlags.
  */
 public class ShopDatabase extends Database {
 
+    private static ShopDatabase instance;
+
     /**
      * Constructs a new {@code ShopDatabase} instance.
      * This constructor initializes the parent {@link Database} class.
      */
-    public ShopDatabase() {
+    private ShopDatabase() {
         String shopDatabaseInfo = Cache.getConfiguration().get("ShopDatabaseInfo", "127.0.0.1;3306;trinity;trinity;shop");
         super(shopDatabaseInfo);
+    }
+
+    /**
+     * Retrieves the singleton instance of the {@code ShopDatabase}.
+     *
+     * @return the singleton instance of {@code ShopDatabase}
+     */
+    public static synchronized ShopDatabase getInstance() {
+        if (instance == null) {
+            instance = new ShopDatabase();
+        }
+        return instance;
     }
 
     /**
@@ -33,6 +47,9 @@ public class ShopDatabase extends Database {
      */
     @Override
     public void loadStatements() {
+
+        clearStatements();
+
         prepareStatement("NONE", "SELECT * FROM `realm_list`", CONNECTION_ASYNC);
     }
 }

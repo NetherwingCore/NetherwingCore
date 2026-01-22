@@ -15,20 +15,43 @@ import static br.net.dd.netherwingcore.database.MySQLConnection.ConnectionFlags.
  *
  * <p>This class is responsible for mapping SQL statements to predefined constants,
  * ensuring structured operations and managing connections in both synchronous and asynchronous modes.
+ *
+ * @see Database
  */
 public class CharacterDatabase extends Database {
+
+    private static CharacterDatabase instance;
 
     /**
      * Constructs a new {@code CharacterDatabase} instance.
      * This constructor initializes the parent {@link Database} class.
      */
-    public CharacterDatabase() {
+    private CharacterDatabase() {
         String characterDatabaseInfo = Cache.getConfiguration().get("CharacterDatabaseInfo", "127.0.0.1;3306;trinity;trinity;character");
         super(characterDatabaseInfo);
     }
 
+    /**
+     * Retrieves the singleton instance of the {@code CharacterDatabase}.
+     *
+     * @return the singleton instance of {@code CharacterDatabase}
+     */
+    public static synchronized CharacterDatabase getInstance() {
+        if (instance == null) {
+            instance = new CharacterDatabase();
+        }
+        return  instance;
+    }
+
+    /**
+     * Loads SQL statements specific to the CharacterDatabase.
+     * This method prepares and adds SQL statements to the database's statement collection.
+     */
     @Override
     public void loadStatements() {
+
+        clearStatements();
+
         prepareStatement("NONE", "SELECT * FROM", CONNECTION_ASYNC);
     }
 }

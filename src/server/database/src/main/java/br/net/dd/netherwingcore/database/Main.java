@@ -1,5 +1,8 @@
 package br.net.dd.netherwingcore.database;
 
+import br.net.dd.netherwingcore.common.utilities.Util;
+import br.net.dd.netherwingcore.database.implementation.LoginDatabase;
+
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 public class Main {

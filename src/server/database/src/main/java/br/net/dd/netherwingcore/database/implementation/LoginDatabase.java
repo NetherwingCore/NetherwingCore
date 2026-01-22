@@ -6,30 +6,51 @@ import br.net.dd.netherwingcore.database.Database;
 import static br.net.dd.netherwingcore.database.MySQLConnection.ConnectionFlags.*;
 
 /**
- * The {@code LoginDatabase} class extends the abstract {@link Database} class
- * and provides specific SQL statements for managing login-related data.
+ * The {@code LoginDatabase} class represents a specialized implementation of the {@link Database}
+ * specifically designed to handle authentication and account operations in the application.
  *
- * <p>This class is responsible for loading and preparing SQL statements
- * that interact with the login database, including operations related to
- * realms, accounts, bans, and authentication.</p>
+ * <p>This class extends the base {@link Database} class and provides a set of SQL statements,
+ * configured through the {@code prepareStatement} method, which are necessary for authentication,
+ * account management, ban management, logging, and other related operations.
+ *
+ * <p>This class is responsible for mapping SQL statements to predefined constants,
+ * ensuring structured operations and managing connections in both synchronous and asynchronous modes.
+ *
+ * @see Database
  */
 public class LoginDatabase extends Database {
+
+    private static LoginDatabase instance;
 
     /**
      * Constructs a new {@code LoginDatabase} instance.
      * This constructor initializes the parent {@link Database} class.
      */
-    public LoginDatabase() {
+    private LoginDatabase() {
         String loginDatabaseInfo = Cache.getConfiguration().get("LoginDatabaseInfo", "127.0.0.1;3306;trinity;trinity;auth");
         super(loginDatabaseInfo);
     }
 
     /**
-     * Loads and prepares all SQL statements required for the login database.
-     * Each statement is defined with a unique name, SQL query, and connection flag.
+     * Retrieves the singleton instance of the {@code LoginDatabase}.
+     *
+     * @return The singleton instance of {@code LoginDatabase}.
+     */
+    public static synchronized LoginDatabase getInstance() {
+        if (instance == null) {
+            instance = new LoginDatabase();
+        }
+        return instance;
+    }
+
+    /**
+     * Loads SQL statements specific to the LoginDatabase.
+     * This method prepares and adds SQL statements to the database's statement collection.
      */
     @Override
     public void loadStatements() {
+
+        clearStatements();
 
         prepareStatement("LOGIN_SEL_REALMLIST", "SELECT id, name, address, localAddress, address3, address4, port, icon, flag, timezone, allowedSecurityLevel, population, gamebuild, Region, Battlegroup FROM realmlist WHERE flag <> 3 ORDER BY name", CONNECTION_SYNC);
         prepareStatement("LOGIN_UPD_REALM_POPULATION", "UPDATE realmlist SET population = ? WHERE id = ?", CONNECTION_ASYNC);

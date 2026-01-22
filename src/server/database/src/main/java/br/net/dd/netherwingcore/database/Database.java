@@ -5,22 +5,28 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Abstract class that represents a database handler. This class is responsible for managing
- * SQL statements and their associated metadata (e.g., connection flags). Subclasses should
- * implement the {@link #loadStatements()} method to define the SQL statements they need.
+ * The {@code Database} class serves as an abstract base for managing database connections
+ * and SQL statements within the application. It extends the {@link MySQLConnection} class,
+ * providing functionality to prepare, store, and retrieve SQL statements.
  *
- * <p>The class provides mechanisms to add SQL statements to a collection and retrieve them
- * by their unique statement names.
+ * <p>This class maintains a list of {@link Statement} objects, allowing subclasses to
+ * define and load specific SQL statements through the abstract {@code loadStatements} method.
+ * It also provides methods to prepare new statements and retrieve existing ones by name.
+ *
+ * <p>Subclasses of {@code Database} are expected to implement the {@code loadStatements}
+ * method to populate the statement list with relevant SQL queries for their specific use cases.
+ *
+ * @see MySQLConnection
+ * @see Statement
  */
 public abstract class Database extends MySQLConnection {
 
-    /** Collection of SQL statements managed by this database handler. */
     private final List<Statement> statementList;
 
     /**
-     * Constructs a new {@code Database} instance and initializes the statement collection.
-     * Subclasses should call {@link #loadStatements()} to populate the collection with
-     * their specific SQL statements.
+     * Constructs a new {@code Database} instance with the specified database information string.
+     *
+     * @param databaseInfoString the database connection information in string format
      */
     protected Database(String databaseInfoString) {
         super(new MySQLConnectionInfo(databaseInfoString));
@@ -29,30 +35,30 @@ public abstract class Database extends MySQLConnection {
     }
 
     /**
-     * Prepares and adds a new SQL statement to the collection.
+     * Prepares and adds a new SQL statement to the database's statement list.
      *
-     * @param name           The unique name of the SQL statement.
-     * @param query          The SQL query string associated with the statement.
-     * @param connectionFlag Additional metadata defining the SQL statement's connection requirements.
+     * @param name           the name of the SQL statement
+     * @param query          the SQL query string
+     * @param connectionFlag the connection flag indicating synchronous or asynchronous execution
      */
     protected void prepareStatement(String name, String query, ConnectionFlags connectionFlag){
         this.statementList.add(new Statement(name, query, connectionFlag));
     };
 
     /**
-     * Prepares and adds a new SQL statement to the collection.
+     * Prepares and adds an existing {@link Statement} object to the database's statement list.
      *
-     * @param statement An instance of {@link Statement} containing the SQL query and metadata.
+     * @param statement the {@link Statement} object to be added
      */
     protected void prepareStatement(Statement statement){
         this.statementList.add(statement);
     }
 
     /**
-     * Retrieves a SQL statement by its unique name.
+     * Retrieves a {@link Statement} object by its name from the database's statement list.
      *
-     * @param name The unique name of the SQL statement to retrieve.
-     * @return The {@link Statement} associated with the given name, or {@code null} if not found.
+     * @param name the name of the SQL statement to retrieve
+     * @return the {@link Statement} object with the specified name, or {@code null} if not found
      */
     public Statement get(String name) {
         AtomicReference<Statement> ref = new AtomicReference<>(null);
@@ -66,8 +72,18 @@ public abstract class Database extends MySQLConnection {
     }
 
     /**
-     * Abstract method that must be implemented by subclasses to initialize
-     * and load the SQL statements required for the specific database implementation.
+     * Clears all SQL statements from the database's statement list.
+     */
+    protected void clearStatements() {
+        if (!this.statementList.isEmpty()) {
+            this.statementList.clear();
+        }
+    }
+
+    /**
+     * Loads SQL statements specific to the database implementation.
+     * Subclasses must implement this method to prepare and add SQL statements
+     * to the database's statement collection.
      */
     public abstract void loadStatements();
 
