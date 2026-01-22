@@ -2,6 +2,7 @@ package br.net.dd.netherwingcore.database;
 
 import br.net.dd.netherwingcore.common.utilities.Util;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
@@ -106,20 +107,19 @@ public abstract class MySQLConnection {
     }
 
     /**
+     * Retrieves a connection from the connection pool.
+     *
+     * @return a {@link Connection} object representing the database connection
+     */
+    public Connection getConnection(){
+        return connectionPool.getConnection();
+    }
+
+    /**
      * Closes the connection to the MySQL database.
      */
     public void close() {
         this.connectionPool = null;
     }
-
-    public boolean execute(String sql) { return false; }
-    public ResultSet query(String sql) { return null; }
-    public boolean executeTransaction(List<String> queries) { return false; }
-    // Error handling
-    private void handleError(SQLException e) {}
-    public void beginTransaction() {}
-    public void commitTransaction() {}
-    public void rollbackTransaction() {}
-    public void startWorkerThread() {}
 
 }

@@ -1,5 +1,6 @@
 package br.net.dd.netherwingcore.database;
 
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -86,5 +87,33 @@ public abstract class Database extends MySQLConnection {
      * to the database's statement collection.
      */
     public abstract void loadStatements();
+
+    /**
+     * Executes a SQL statement by its name.
+     *
+     * @param name the name of the SQL statement to execute
+     * @return {@code true} if the execution was successful, {@code false} otherwise
+     */
+    public boolean execute(String name){
+
+        AtomicReference<Statement> ref = new AtomicReference<>(null);
+
+        statementList.forEach(statement -> {
+            if(statement.name().equals(name)){
+                ref.set(statement);
+                return;
+            }
+        });
+
+        if (ref.get() == null) { return  false; }
+
+        System.out.println("Executing statement: " + ref.get().name() + " | Query: " + ref.get().query());
+
+        return true;
+
+    }
+    public ResultSet query(String name){
+        return null;
+    }
 
 }
