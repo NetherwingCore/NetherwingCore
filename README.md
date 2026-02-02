@@ -1,7 +1,7 @@
 
 # NetherwingCore (master)
 
-![NetherwingCore Logo](https://raw.githubusercontent.com/NetherwingCore/NetherwingCore/master/docs/NetherwingCore.png)
+<img src="https://raw.githubusercontent.com/NetherwingCore/NetherwingCore/master/docs/NetherwingCore.png" width="200" height="200" align="left"/>
 
 ```
  __  __          __    __                                                         
@@ -15,6 +15,7 @@
     https://github.com/NetherwingCore/NetherwingCore                CORE   \_/__/  
 ```
 
+## INDICE
 * [Build Status](#build-status)
 * [Introduction](#introduction)
 * [Requirements](#requirements)
