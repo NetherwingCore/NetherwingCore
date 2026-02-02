@@ -16,6 +16,9 @@ import java.util.concurrent.*;
  */
 public class LoginDatabase extends GenericDatabase<LoginDatabaseStatements> {
 
+    private Integer syncTheadPoolSize = 4;
+    private Integer aSyncTheadPoolSize = 4;
+
     private static LoginDatabase instance;
 
     /**
@@ -25,6 +28,8 @@ public class LoginDatabase extends GenericDatabase<LoginDatabaseStatements> {
     private LoginDatabase() {
         String loginDatabaseInfo = Cache.getConfiguration().get("LoginDatabaseInfo", "127.0.0.1;3306;trinity;trinity;auth");
         super(loginDatabaseInfo);
+        this.aSyncTheadPoolSize = Cache.getConfiguration().get("LoginDatabase.WorkerThreads", 1);
+        this.syncTheadPoolSize = Cache.getConfiguration().get("LoginDatabase.SynchThreads", 1);
     }
 
     /**
@@ -45,7 +50,6 @@ public class LoginDatabase extends GenericDatabase<LoginDatabaseStatements> {
      * @param statement The database statement to execute.
      * @param params    The parameters to bind to the statement.
      * @return true if the execution was successful, false otherwise.
-     *
      * @see GenericDatabase#execute
      */
     @SafeVarargs
@@ -64,7 +68,6 @@ public class LoginDatabase extends GenericDatabase<LoginDatabaseStatements> {
      * @param statement The database statement to execute.
      * @param params    The parameters to bind to the statement.
      * @return true if the execution was successful, false otherwise.
-     *
      * @see GenericDatabase#syncExecute
      */
     @SafeVarargs
@@ -89,14 +92,13 @@ public class LoginDatabase extends GenericDatabase<LoginDatabaseStatements> {
      * @param statement The database statement to execute.
      * @param params    The parameters to bind to the statement.
      * @return true if the execution was successful, false otherwise.
-     *
      * @see GenericDatabase#asyncExecute
      */
     @SafeVarargs
     @Override
     protected final boolean asyncExecute(LoginDatabaseStatements statement, Map<Integer, String>... params) {
 
-        ExecutorService executorService = Executors.newFixedThreadPool(4);
+        ExecutorService executorService = Executors.newFixedThreadPool(this.aSyncTheadPoolSize);
 
         CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() -> {
             PreparedStatement preparedStatement = getPreparedStatement(statement.getQuery(), params);
@@ -126,7 +128,6 @@ public class LoginDatabase extends GenericDatabase<LoginDatabaseStatements> {
      * @param statement The database statement to query.
      * @param params    The parameters to bind to the statement.
      * @return A ResultSet containing the results of the query.
-     *
      * @see GenericDatabase#query
      */
     @SafeVarargs
@@ -145,12 +146,19 @@ public class LoginDatabase extends GenericDatabase<LoginDatabaseStatements> {
      * @param statement The database statement to query.
      * @param params    The parameters to bind to the statement.
      * @return A ResultSet containing the results of the query.
-     *
      * @see GenericDatabase#syncQuery
      */
     @SafeVarargs
     @Override
     protected final ResultSet syncQuery(LoginDatabaseStatements statement, Map<Integer, String>... params) {
+        PreparedStatement preparedStatement = getPreparedStatement(statement.getQuery(), params);
+        if (preparedStatement != null) {
+            try {
+                return preparedStatement.executeQuery();
+            } catch (Exception e) {
+                return null;
+            }
+        }
         return null;
     }
 
@@ -160,12 +168,31 @@ public class LoginDatabase extends GenericDatabase<LoginDatabaseStatements> {
      * @param statement The database statement to query.
      * @param params    The parameters to bind to the statement.
      * @return A ResultSet containing the results of the query.
-     *
      * @see GenericDatabase#asyncQuery
      */
     @SafeVarargs
     @Override
     protected final ResultSet asyncQuery(LoginDatabaseStatements statement, Map<Integer, String>... params) {
-        return null;
+
+        ExecutorService executorService = Executors.newFixedThreadPool(this.aSyncTheadPoolSize);
+
+        CompletableFuture<ResultSet> future = CompletableFuture.supplyAsync(() -> {
+            PreparedStatement preparedStatement = getPreparedStatement(statement.getQuery(), params);
+            if (preparedStatement != null) {
+                try {
+                    return preparedStatement.executeQuery();
+                } catch (Exception e) {
+                    return null;
+                }
+            }
+            return null;
+        }, executorService);
+
+        try {
+            return future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            return null;
+        }
+
     }
 }
