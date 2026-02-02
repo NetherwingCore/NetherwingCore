@@ -1,7 +1,7 @@
 
 # NetherwingCore (master)
 
-<img src="https://raw.githubusercontent.com/NetherwingCore/NetherwingCore/master/docs/NetherwingCore.png" width="200" height="200" align="left"/>
+<img src="https://raw.githubusercontent.com/NetherwingCore/NetherwingCore/master/docs/NetherwingCore.png" width="150" height="150" align="left"/>
 
 ```
  __  __          __    __                                                         
