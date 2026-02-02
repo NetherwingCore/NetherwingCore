@@ -1,7 +1,13 @@
-
-
-| ![logo](https://raw.githubusercontent.com/NetherwingCore/NetherwingCore/master/docs/NetherwingCore_150x150.png) | NetherwingCore (master) |
-|--|--|
+<table border="0">
+  <tr>
+    <td>
+      <img src="https://raw.githubusercontent.com/NetherwingCore/NetherwingCore/master/docs/NetherwingCore_150x150.png" width="150">
+    </td>
+    <td>
+      <strong>NetherwingCore (master)</strong><br>
+    </td>
+  </tr>
+</table>
 
 ```
  __  __          __    __                                                         
