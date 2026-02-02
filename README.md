@@ -1,6 +1,8 @@
 
 # NetherwingCore (master)
 
+![NetherwingCore Logo](https://raw.githubusercontent.com/NetherwingCore/NetherwingCore/master/docs/NetherwingCore.png)
+
 ```
  __  __          __    __                                                         
 /\ \/\ \        /\ \__/\ \                                 __                     
