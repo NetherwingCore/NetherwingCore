@@ -1,14 +1,12 @@
 package br.net.dd.netherwingcore.common.configuration;
 
 /**
- * This class serves as a representation of a configuration sample.
- * It acts as a holder for an instance of a {@link Configuration} object
- * and a file name associated with the configuration.
+ * This abstract class represents a sample configuration that can be used to initialize the application's {@link Configuration}.
  *
- * The {@code ConfigurationSample} class provides methods to get and set
- * the configuration instance as well as the file name.
+ * <p>Subclasses of {@code ConfigurationSample} should provide specific implementations for loading and saving configuration data,
+ * as well as defining the structure of the configuration file.</p>
  */
-public class ConfigurationSample {
+public abstract class ConfigurationSample {
 
     /**
      * The configuration object associated with this sample.

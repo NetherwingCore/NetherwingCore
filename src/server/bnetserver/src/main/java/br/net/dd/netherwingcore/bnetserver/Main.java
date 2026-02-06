@@ -4,7 +4,7 @@ package br.net.dd.netherwingcore.bnetserver;
 import br.net.dd.netherwingcore.bnetserver.configuration.BnetConfigSample;
 import br.net.dd.netherwingcore.bnetserver.rest.LoginRESTService;
 import br.net.dd.netherwingcore.common.banner.Banner;
-import br.net.dd.netherwingcore.common.cache.Cache;
+import br.net.dd.netherwingcore.common.configuration.Config;
 
 import static br.net.dd.netherwingcore.common.logging.Log.log;
 
@@ -15,7 +15,7 @@ public class Main {
 
         log("Loading configuration...");
 
-        Cache.loadConfig(new BnetConfigSample());
+        Config.loadConfig(new BnetConfigSample());
 
         LoginRESTService.start();
 

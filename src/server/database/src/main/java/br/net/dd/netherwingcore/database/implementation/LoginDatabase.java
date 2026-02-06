@@ -1,6 +1,6 @@
 package br.net.dd.netherwingcore.database.implementation;
 
-import br.net.dd.netherwingcore.common.cache.Cache;
+import br.net.dd.netherwingcore.common.configuration.Config;
 import br.net.dd.netherwingcore.database.common.GenericDatabase;
 
 import java.sql.PreparedStatement;
@@ -26,10 +26,10 @@ public class LoginDatabase extends GenericDatabase<LoginDatabaseStatements> {
      * Initializes the LoginDatabase with connection information from the configuration cache.
      */
     private LoginDatabase() {
-        String loginDatabaseInfo = Cache.getConfiguration().get("LoginDatabaseInfo", "127.0.0.1;3306;trinity;trinity;auth");
+        String loginDatabaseInfo = Config.get("LoginDatabaseInfo", "127.0.0.1;3306;trinity;trinity;auth");
         super(loginDatabaseInfo);
-        this.aSyncTheadPoolSize = Cache.getConfiguration().get("LoginDatabase.WorkerThreads", 1);
-        this.syncTheadPoolSize = Cache.getConfiguration().get("LoginDatabase.SynchThreads", 1);
+        this.aSyncTheadPoolSize = Config.get("LoginDatabase.WorkerThreads", 1);
+        this.syncTheadPoolSize = Config.get("LoginDatabase.SynchThreads", 1);
     }
 
     /**

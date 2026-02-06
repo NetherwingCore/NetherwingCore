@@ -9,14 +9,30 @@ import br.net.dd.netherwingcore.common.configuration.structs.Section;
 
 import static br.net.dd.netherwingcore.common.configuration.fields.Type.*;
 
+/**
+ * This class represents a sample configuration for the NetherwingCore Auth Server, providing a structured example of how to define
+ * configuration options for the server. It extends {@link ConfigurationSample} and initializes a {@link Configuration} object
+ * with various sections, groups, and items that illustrate the expected format and content of the configuration file.
+ *
+ * <p>The {@code BnetConfigSample} class serves as a template for creating the actual configuration file used by the auth server,
+ * demonstrating how to organize settings and provide detailed descriptions, examples, and default values for each configuration option.</p>
+ */
 public class BnetConfigSample extends ConfigurationSample {
 
+    /**
+     * Constructs a new instance of {@code BnetConfigSample}, initializing the configuration with a sample structure and setting the file name for the configuration file.
+     */
     public BnetConfigSample() {
         super();
         setConfiguration(createSample());
         setFileName("bnetserver.conf");
     }
 
+    /**
+     * Creates a sample {@link Configuration} object with predefined sections, groups, and items that illustrate the expected format and content of the configuration file.
+     *
+     * @return A {@link Configuration} instance representing the sample configuration for the NetherwingCore Auth Server.
+     */
     public Configuration makeSample() {
 
         Configuration configuration = new Configuration(
@@ -45,6 +61,11 @@ public class BnetConfigSample extends ConfigurationSample {
         return configuration;
     }
 
+    /**
+     * Creates a sample {@link Configuration} object with predefined sections, groups, and items that illustrate the expected format and content of the configuration file.
+     *
+     * @return A {@link Configuration} instance representing the sample configuration for the NetherwingCore Auth Server.
+     */
     public Configuration createSample() {
 
         return new Configuration(new Description("NetherwingCore Auth Server configuration file"), "bnetserver")

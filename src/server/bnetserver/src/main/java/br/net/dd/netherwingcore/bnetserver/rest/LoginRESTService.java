@@ -1,7 +1,7 @@
 package br.net.dd.netherwingcore.bnetserver.rest;
 
 import br.net.dd.netherwingcore.bnetserver.rest.handlers.*;
-import br.net.dd.netherwingcore.common.cache.Cache;
+import br.net.dd.netherwingcore.common.configuration.Config;
 import br.net.dd.netherwingcore.common.cryptography.SSLContextImpl;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
@@ -25,7 +25,7 @@ public class LoginRESTService {
     }
 
     private void initializeService() {
-        loginRestPort = Cache.getConfiguration().get("LoginREST.Port", 8081);
+        loginRestPort = Config.get("LoginREST.Port", 8081);
 
         try {
             // Creates an HTTPS server on port 8081
