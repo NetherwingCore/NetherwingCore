@@ -24,13 +24,13 @@ message FormInput {
 message FormInputs {
   FormType type = 1;
   repeated FormInput inputs = 2;
+  string srp_url = 3;
+  string srp_js = 4;
 }
 
 message FormInputValue {
   string input_id = 1;
   string value = 2;
-  string srp_url = 3;
-  string srp_js = 4;
 }
 
 message LoginForm {
