@@ -29,6 +29,8 @@ message FormInputs {
 message FormInputValue {
   string input_id = 1;
   string value = 2;
+  string srp_url = 3;
+  string srp_js = 4;
 }
 
 message LoginForm {
@@ -36,6 +38,18 @@ message LoginForm {
   string program_id = 2;
   string version = 3;
   repeated FormInputValue inputs = 4;
+}
+
+message SrpLoginChallenge {
+  uint32 version = 1;
+  uint32 iterations = 2;
+  string modulus = 3;
+  string generator = 4;
+  string hash_function = 5;
+  string username = 6;
+  string salt = 7;
+  string public_B = 8;
+  bool eligible_credential_upgrade = 9;
 }
 
 enum AuthenticationState {
@@ -51,6 +65,8 @@ message LoginResult {
   string error_message = 3;
   string url = 4;
   string login_ticket = 5;
+  string server_evidence_M2 = 6;
+  string next_url = 7;
 }
 
 message LoginRefreshResult {
