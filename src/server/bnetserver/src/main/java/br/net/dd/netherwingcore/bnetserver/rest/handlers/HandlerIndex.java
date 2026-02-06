@@ -7,6 +7,10 @@ import java.io.IOException;
 
 import static br.net.dd.netherwingcore.common.logging.Log.log;
 
+/**
+ * HandlerIndex is responsible for handling requests to the root endpoint ("/") of the REST API.
+ * It can be used to provide basic information about the API, such as available endpoints, status, or a welcome message.
+ */
 public class HandlerIndex implements HttpHandler {
 
     @Override

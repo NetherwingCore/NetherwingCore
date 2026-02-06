@@ -13,6 +13,10 @@ import java.util.concurrent.Executors;
 
 import static br.net.dd.netherwingcore.common.logging.Log.log;
 
+/**
+ * LoginRESTService is responsible for handling RESTful API requests related to login operations.
+ * It sets up an HTTPS server and registers various endpoints for login, game accounts, portal information, and more.
+ */
 public class LoginRESTService {
 
     private static Integer loginRestPort = 0;
@@ -24,6 +28,10 @@ public class LoginRESTService {
         initializeService();
     }
 
+    /**
+     * Initializes the Login REST Service by creating an HTTPS server, configuring it, and registering the necessary endpoints.
+     * It also sets up a thread pool for handling incoming requests.
+     */
     private void initializeService() {
         loginRestPort = Config.get("LoginREST.Port", 8081);
 
@@ -32,15 +40,30 @@ public class LoginRESTService {
             server = HttpsServer.create(new InetSocketAddress(loginRestPort), 0);
             server.setHttpsConfigurator(new HttpsConfigurator(SSLContextImpl.get()));
 
+            log("--");
             // Register endpoints
             server.createContext("/bnetserver/", new HandlerIndex());
-            server.createContext("/bnetserver/login/", new HandlerLogin());
-            server.createContext("/bnetserver/login/srp/", new HandlePostLoginSrpChallenge());
-            server.createContext("/bnetserver/gameAccounts/", new HandlerGetGameAccounts());
-            server.createContext("/bnetserver/portal/", new HandlerGetPortal());
-            server.createContext("/bnetserver/refreshLoginTicket/", new HandlerPostRefreshLoginTicket());
+            log("Registered endpoint: /bnetserver/");
 
+            server.createContext("/bnetserver/login/", new HandlerLogin());
+            log("Registered endpoint: /bnetserver/login/");
+
+            server.createContext("/bnetserver/login/srp/", new HandlePostLoginSrpChallenge());
+            log("Registered endpoint: /bnetserver/login/srp/");
+
+            server.createContext("/bnetserver/gameAccounts/", new HandlerGetGameAccounts());
+            log("Registered endpoint: /bnetserver/gameAccounts/");
+
+            server.createContext("/bnetserver/portal/", new HandlerGetPortal());
+            log("Registered endpoint: /bnetserver/portal/");
+
+            server.createContext("/bnetserver/refreshLoginTicket/", new HandlerPostRefreshLoginTicket());
+            log("Registered endpoint: /bnetserver/refreshLoginTicket/");
+            log("--");
+
+            // Sets a thread pool executor for handling incoming requests
             server.setExecutor(Executors.newFixedThreadPool(4)); // Creates a thread pool with 4 threads
+            // Starts the server
             server.start();
 
             log("Login REST Service started at https://localhost:" + loginRestPort + "/bnetserver/");
@@ -52,6 +75,9 @@ public class LoginRESTService {
 
     }
 
+    /**
+     * Starts the Login REST Service. If the service is already running, it logs a message and does not start a new instance.
+     */
     public static void start() {
         if (instance == null) {
             instance = new LoginRESTService();
@@ -64,6 +90,9 @@ public class LoginRESTService {
         }
     }
 
+    /**
+     * Stops the Login REST Service. It stops the HTTPS server and sets the instance to null.
+     */
     public static void stop() {
 
         server.stop(0);
