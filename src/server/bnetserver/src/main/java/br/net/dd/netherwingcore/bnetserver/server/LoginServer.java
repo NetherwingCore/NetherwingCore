@@ -38,12 +38,21 @@ public class LoginServer {
                     .addService(new AuthenticationService())
                     .addService(new GameUtilitiesService())
                     .addService(new AccountService())
+                    .intercept(new ConnectionInterceptor())
                     .executor(Executors.newFixedThreadPool(4))
                     .build();
 
             server.start();
 
-            log("BattleNet gRPC Server started, listening on 0.0.0.0:" + battlenetPort);
+            server.getServices().forEach(service -> {
+                log("Service " + service.getServiceDescriptor().getName() + " started.");
+            });
+
+            server.getListenSockets().forEach(socketAddress -> {
+                log("Battle.net Service listening on " + socketAddress.toString());
+            });
+
+            //log("BattleNet gRPC Server started, listening on 0.0.0.0:" + battlenetPort);
 
         } catch (IOException e) {
             throw new RuntimeException(e);
