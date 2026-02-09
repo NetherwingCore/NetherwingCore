@@ -3,6 +3,7 @@ package br.net.dd.netherwingcore.bnetserver;
 
 import br.net.dd.netherwingcore.bnetserver.configuration.BnetConfigSample;
 import br.net.dd.netherwingcore.bnetserver.rest.LoginRESTService;
+import br.net.dd.netherwingcore.bnetserver.server.BattleNetService;
 import br.net.dd.netherwingcore.bnetserver.server.LoginServer;
 import br.net.dd.netherwingcore.common.banner.Banner;
 import br.net.dd.netherwingcore.common.configuration.Config;
@@ -19,7 +20,8 @@ public class Main {
         Config.loadConfig(new BnetConfigSample());
 
         LoginRESTService.start();
-        LoginServer.start();
+        //LoginServer.start();
+        BattleNetService.start();
 
         // Adds a hook to capture Ctrl+C.
         Runtime.getRuntime().addShutdownHook(new Thread(Main::stopServices));
@@ -28,8 +30,9 @@ public class Main {
 
     public static void stopServices() {
         log("Stopping NetherwingCore BNet Server...");
-        LoginServer.stop();
+        //LoginServer.stop();
         LoginRESTService.stop();
+        BattleNetService.stop();
     }
 
 }
