@@ -23,10 +23,18 @@ public class BattleNetService {
 
     private static BattleNetService instance;
 
+    /**
+     * Private constructor to prevent instantiation from outside the class.
+     * Initializes the Battle.net service by setting up the SSL server socket and starting the accept thread.
+     */
     private BattleNetService() {
         initializeService();
     }
 
+    /**
+     * Initializes the Battle.net service by setting up the SSL server socket and starting the accept thread.
+     * It retrieves the port from the configuration, creates the SSL server socket, and starts a thread to accept client connections.
+     */
     private void initializeService() {
 
         try {
@@ -58,6 +66,10 @@ public class BattleNetService {
 
     }
 
+    /**
+     * Starts the Battle.net service if it is not already running.
+     * If the service is already initialized, it logs a message indicating that the service is already running.
+     */
     public static void start() {
         if (instance == null) {
             instance = new BattleNetService();
@@ -68,6 +80,10 @@ public class BattleNetService {
         }
     }
 
+    /**
+     * Stops the Battle.net service by closing the server socket and shutting down the executor service.
+     * It also sets the running flag to false and logs a message indicating that the service has been stopped.
+     */
     public static void stop() {
         running = false;
         if (server != null) {
