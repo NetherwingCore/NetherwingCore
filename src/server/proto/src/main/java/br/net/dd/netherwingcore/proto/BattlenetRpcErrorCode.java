@@ -648,7 +648,14 @@ public enum BattlenetRpcErrorCode {
     ERROR_WOW_SERVICES_SUBSCRIPTION_EXPIRED(0x80000147),
     ERROR_WOW_SERVICES_CANT_CONNECT(0x80000148);
 
-    BattlenetRpcErrorCode(int code) {
+    private final int value;
+
+    BattlenetRpcErrorCode(int value) {
+        this.value = value;
+    }
+
+    public int getValue() {
+        return value;
     }
 
 }

@@ -21,8 +21,68 @@ public class Log {
      *
      * @param message A string message to log.
      */
-    public static void log(String message) {
-        log(new InformationMessage(message));
+    public static void log(String message, String... parameters) {
+        log(new InformationMessage(formatMessage(message, parameters)));
+    }
+
+    /**
+     * Logs an informational message with optional parameters for formatting.
+     * The message is formatted using the provided parameters if any are given.
+     *
+     * @param message    The informational message to log, which should be an instance of {@link InformationMessage}.
+     * @param parameters Optional parameters to format the message. If provided, the message will be formatted
+     *                   using these parameters before logging.
+     */
+    public static void info(String message, String... parameters) {
+        log(new InformationMessage(formatMessage(message, parameters)));
+    }
+
+    /**
+     * Logs a warning message with optional parameters for formatting.
+     * The message is formatted using the provided parameters if any are given.
+     *
+     * @param message    The warning message to log, which should be an instance of {@link WarningMessage}.
+     * @param parameters Optional parameters to format the message. If provided, the message will be formatted
+     *                   using these parameters before logging.
+     */
+    public static void warn(String message, String... parameters) {
+        log(new WarningMessage(formatMessage(message, parameters)));
+    }
+
+    /**
+     * Logs an error message with optional parameters for formatting.
+     * The message is formatted using the provided parameters if any are given.
+     *
+     * @param message    The error message to log, which should be an instance of {@link ErrorMessage}.
+     * @param parameters Optional parameters to format the message. If provided, the message will be formatted
+     *                   using these parameters before logging.
+     */
+    public static void error(String message, String... parameters) {
+        log(new ErrorMessage(formatMessage(message, parameters)));
+    }
+
+    /**
+     * Logs a fatal error message with optional parameters for formatting.
+     * The message is formatted using the provided parameters if any are given.
+     *
+     * @param message    The fatal error message to log, which should be an instance of {@link FatalErrorMessage}.
+     * @param parameters Optional parameters to format the message. If provided, the message will be formatted
+     *                   using these parameters before logging.
+     */
+    public static void fatal(String message, String... parameters) {
+        log(new FatalErrorMessage(formatMessage(message, parameters)));
+    }
+
+    /**
+     * Logs a debug message with optional parameters for formatting.
+     * The message is formatted using the provided parameters if any are given.
+     *
+     * @param message    The debug message to log, which should be an instance of {@link DebugMessage}.
+     * @param parameters Optional parameters to format the message. If provided, the message will be formatted
+     *                   using these parameters before logging.
+     */
+    public static void debug(String message, String... parameters) {
+        log(new DebugMessage(formatMessage(message, parameters)));
     }
 
     /**
@@ -63,5 +123,21 @@ public class Log {
             FileManager.write("[" + level.get().name() + "] " + message.get(), path);
         });
 
+    }
+
+    /**
+     * Formats a message by replacing placeholders with the provided parameters.
+     * Placeholders in the message should be denoted by "{}". Each placeholder will be replaced
+     * sequentially with the corresponding parameter from the provided array.
+     *
+     * @param message    The message containing placeholders to be formatted.
+     * @param parameters An array of strings to replace the placeholders in the message.
+     * @return The formatted message with all placeholders replaced by their corresponding parameters.
+     */
+    private static String formatMessage(String message, String... parameters) {
+        for (String param : parameters) {
+            message = message.replaceFirst("\\{}", param);
+        }
+        return message;
     }
 }

@@ -1,228 +1,216 @@
 package br.net.dd.netherwingcore.common.utilities;
 
-import java.util.Arrays;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 /**
- * A utility class for managing a buffer of bytes, with functionality for
- * reading, writing, resizing, and resetting the buffer.
- * This class is useful for handling byte streams and provides methods for
- * efficient memory management.
+ * A utility class for managing a byte buffer for reading and writing messages.
+ * It supports dynamic resizing, reading/writing data, and handling little-endian byte order.
  */
 public class MessageBuffer {
 
-    private int writePosition;
+    private ByteBuffer buffer;
     private int readPosition;
-    private byte[] storage;
+    private int writePosition;
 
     /**
-     * Default constructor, initializes the buffer with a default size of 4096 bytes.
+     * Constructs a MessageBuffer with the specified initial capacity.
+     *
+     * @param initialCapacity The initial capacity of the buffer in bytes.
+     */
+    public MessageBuffer(int initialCapacity) {
+        this.buffer = ByteBuffer.allocate(initialCapacity);
+        this.buffer.order(ByteOrder.LITTLE_ENDIAN);
+        this.readPosition = 0;
+        this.writePosition = 0;
+    }
+
+    /**
+     * Constructs a MessageBuffer with a default initial capacity of 4096 bytes.
      */
     public MessageBuffer() {
         this(4096);
     }
 
     /**
-     * Constructor that initializes the buffer with a specified initial size.
+     * Resizes the buffer to the specified new size. If the new size is smaller than the current capacity,
+     * it simply adjusts the limit. If it's larger, it creates a new buffer and copies existing data.
      *
-     * @param initialSize the initial size of the buffer.
-     */
-    public MessageBuffer(int initialSize) {
-        this.writePosition = 0;
-        this.readPosition = 0;
-        this.storage = new byte[initialSize];
-    }
-
-    /**
-     * Copy constructor. Creates a new buffer that is a copy of the given buffer.
-     *
-     * @param other the buffer to copy from.
-     */
-    public MessageBuffer(MessageBuffer other) {
-        this.writePosition = other.writePosition;
-        this.readPosition = other.readPosition;
-        this.storage = Arrays.copyOf(other.storage, other.storage.length);
-    }
-
-    /**
-     * Movement constructor. Creates a new buffer by reusing the storage
-     * of the given buffer. Optionally resets the original buffer.
-     *
-     * @param from the buffer to move from.
-     * @param move if true, the original buffer is reset.
-     */
-    public MessageBuffer(MessageBuffer from, boolean move) {
-        this.writePosition = from.writePosition;
-        this.readPosition = from.readPosition;
-        this.storage = from.storage;
-        if (move) {
-            from.reset();
-        }
-    }
-
-    /**
-     * Resets the buffer. Clears the read and write positions, effectively
-     * making the buffer empty.
-     */
-    public void reset() {
-        this.writePosition = 0;
-        this.readPosition = 0;
-    }
-
-    /**
-     * Resizes the buffer to the specified new size.
-     *
-     * @param newSize the new size of the buffer.
+     * @param newSize The new size of the buffer in bytes.
      */
     public void resize(int newSize) {
-        if (newSize != storage.length) {
-            storage = Arrays.copyOf(storage, newSize);
+        if (newSize <= buffer.capacity()) {
+            buffer.limit(newSize);
+            return;
         }
+
+        ByteBuffer newBuffer = ByteBuffer.allocate(newSize);
+        newBuffer.order(ByteOrder.LITTLE_ENDIAN);
+
+        buffer.flip();
+        newBuffer.put(buffer);
+
+        this.buffer = newBuffer;
     }
 
     /**
-     * Retrieves the underlying byte array of the buffer.
+     * Writes the specified byte array to the buffer at the current write position.
      *
-     * @return the storage array of the buffer.
+     * @param data   The byte array to write.
+     * @param length The number of bytes from the array to write.
      */
-    public byte[] getBasePointer() {
-        return storage;
+    public void write(byte[] data, int length) {
+        ensureCapacity(writePosition + length);
+        buffer.position(writePosition);
+        buffer.put(data, 0, length);
+        writePosition += length;
     }
 
     /**
-     * Retrieves the portion of the buffer that is available for reading.
+     * Writes the entire byte array to the buffer at the current write position.
      *
-     * @return a copy of the read portion of the buffer.
-     */
-    public byte[] getReadPointer() {
-        return Arrays.copyOfRange(storage, readPosition, storage.length);
-    }
-
-    /**
-     * Retrieves the portion of the buffer that is available for writing.
-     *
-     * @return a copy of the writable portion of the buffer.
-     */
-    public byte[] getWritePointer() {
-        return Arrays.copyOfRange(storage, writePosition, storage.length);
-    }
-
-    /**
-     * Marks a specified number of bytes as read from the buffer.
-     *
-     * @param bytes the number of bytes to mark as read.
-     */
-    public void readCompleted(int bytes) {
-        readPosition += bytes;
-    }
-
-    /**
-     * Marks a specified number of bytes as written to the buffer.
-     *
-     * @param bytes the number of bytes to mark as written.
-     */
-    public void writeCompleted(int bytes) {
-        writePosition += bytes;
-    }
-
-    /**
-     * Calculates the size of the active data in the buffer (data between
-     * the read and write positions).
-     *
-     * @return the active size of the buffer.
-     */
-    public int getActiveSize() {
-        return writePosition - readPosition;
-    }
-
-    /**
-     * Calculates the remaining free space in the buffer (space between
-     * the write position and the end of the buffer).
-     *
-     * @return the remaining free space.
-     */
-    public int getRemainingSpace() {
-        return storage.length - writePosition;
-    }
-
-    /**
-     * Retrieves the total capacity of the buffer.
-     *
-     * @return the total size of the buffer.
-     */
-    public int getBufferSize() {
-        return storage.length;
-    }
-
-    /**
-     * Normalizes the buffer by moving unread data to the beginning,
-     * freeing up space for new writes. This minimizes fragmentation.
-     */
-    public void normalize() {
-        if (readPosition > 0) {
-            int activeSize = getActiveSize();
-            if (readPosition != writePosition) {
-                System.arraycopy(storage, readPosition, storage, 0, activeSize);
-            }
-            writePosition -= readPosition;
-            readPosition = 0;
-        }
-    }
-
-    /**
-     * Ensures that there is free space available in the buffer. If no free
-     * space remains, the buffer is resized to 1.5 times its current size.
-     */
-    public void ensureFreeSpace() {
-        if (getRemainingSpace() == 0) {
-            resize(storage.length * 3 / 2);
-        }
-    }
-
-    /**
-     * Writes a byte array to the buffer.
-     *
-     * @param data the data to write.
+     * @param data The byte array to write.
      */
     public void write(byte[] data) {
         write(data, data.length);
     }
 
     /**
-     * Writes a portion of a byte array to the buffer.
+     * Reads a specified number of bytes from the buffer starting at the current read position.
      *
-     * @param data the data to write.
-     * @param size the number of bytes to write.
+     * @param length The number of bytes to read.
+     * @return A byte array containing the read data.
+     * @throws IllegalStateException If there is not enough data to read.
      */
-    public void write(byte[] data, int size) {
-        ensureFreeSpace();
-        System.arraycopy(data, 0, storage, writePosition, size);
-        writeCompleted(size);
-    }
-
-    /**
-     * Moves the storage to a new byte array and resets the buffer.
-     *
-     * @return the old storage array.
-     */
-    public byte[] move() {
-        byte[] oldStorage = storage;
-        reset();
-        return oldStorage;
-    }
-
-    /**
-     * Assignment method. Copies the content of another buffer into this one.
-     *
-     * @param other the buffer to copy from.
-     * @return this buffer, updated with the content of the other buffer.
-     */
-    public MessageBuffer assign(MessageBuffer other) {
-        if (this != other) {
-            this.writePosition = other.writePosition;
-            this.readPosition = other.readPosition;
-            this.storage = Arrays.copyOf(other.storage, other.storage.length);
+    public byte[] read(int length) {
+        if (length > getActiveSize()) {
+            throw new IllegalStateException("Not enough data to read");
         }
-        return this;
+
+        byte[] result = new byte[length];
+        buffer.position(readPosition);
+        buffer.get(result);
+        readPosition += length;
+
+        return result;
+    }
+
+    /**
+     * Gets a byte array containing the data at the current read position without advancing the read position.
+     *
+     * @param length The number of bytes to get.
+     * @return A byte array containing the data at the current read position.
+     * @throws IllegalStateException If there is not enough data to get.
+     */
+    public byte[] getReadPointer(int length) {
+        byte[] result = new byte[length];
+        int currentPos = buffer.position();
+
+        buffer.position(readPosition);
+        buffer.get(result);
+        buffer.position(currentPos);
+
+        return result;
+    }
+
+    /**
+     * Advances the read position by the specified number of bytes after a successful read operation.
+     *
+     * @param bytesRead The number of bytes that were read.
+     */
+    public void readCompleted(int bytesRead) {
+        readPosition += bytesRead;
+    }
+
+    /**
+     * Advances the write position by the specified number of bytes after a successful write operation.
+     *
+     * @param bytesWritten The number of bytes that were written.
+     */
+    public void writeCompleted(int bytesWritten) {
+        writePosition += bytesWritten;
+    }
+
+    /**
+     * Gets the number of bytes currently available for reading in the buffer.
+     *
+     * @return The number of bytes available for reading.
+     */
+    public int getActiveSize() {
+        return writePosition - readPosition;
+    }
+
+    /**
+     * Gets the remaining capacity of the buffer for writing new data.
+     *
+     * @return The number of bytes available for writing.
+     */
+    public int getRemainingSpace() {
+        return buffer.capacity() - writePosition;
+    }
+
+    /**
+     * Gets the current read position in the buffer.
+     *
+     * @return The current read position.
+     */
+    public int getWritePosition() {
+        return writePosition;
+    }
+
+    /**
+     * Resets the buffer by clearing its contents and resetting the read and write positions to zero.
+     */
+    public void reset() {
+        readPosition = 0;
+        writePosition = 0;
+        buffer.clear();
+    }
+
+    /**
+     * Converts the active portion of the buffer (from the current read position to the current write position) into a byte array.
+     *
+     * @return A byte array containing the active data in the buffer.
+     */
+    public byte[] toArray() {
+        byte[] result = new byte[getActiveSize()];
+        buffer.position(readPosition);
+        buffer.get(result);
+        return result;
+    }
+
+    /**
+     * Ensures that the buffer has enough capacity to accommodate the required number of bytes. If not, it resizes the buffer.
+     *
+     * @param required The total number of bytes required in the buffer.
+     */
+    private void ensureCapacity(int required) {
+        if (required > buffer.capacity()) {
+            int newCapacity = Math.max(required, buffer.capacity() * 2);
+            resize(newCapacity);
+        }
+    }
+
+    /**
+     * Reads an unsigned short (2 bytes) from the buffer in little-endian order and returns it as an int.
+     *
+     * @return The unsigned short value read from the buffer (0 to 65535).
+     */
+    public int readUnsignedShortLE() {
+        byte[] bytes = read(2);
+        return ((bytes[1] & 0xFF) << 8) | (bytes[0] & 0xFF);
+    }
+
+    /**
+     * Writes an unsigned short (2 bytes) to the buffer in little-endian order.
+     *
+     * @param value The unsigned short value to write (0 to 65535).
+     */
+    public void writeShortLE(int value) {
+        byte[] bytes = new byte[2];
+        bytes[0] = (byte) (value & 0xFF);
+        bytes[1] = (byte) ((value >> 8) & 0xFF);
+        write(bytes);
     }
 
 }

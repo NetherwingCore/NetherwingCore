@@ -195,4 +195,44 @@ public class LoginDatabase extends GenericDatabase<LoginDatabaseStatements> {
         }
 
     }
+
+    /**
+     * Retrieves account information from the database based on the provided email.
+     *
+     * @param email The email address associated with the account to retrieve.
+     * @return An AccountInfo object containing the account details, or null if no account is found.
+     */
+    public static AccountInfo getAccountByEmail(String email) {
+        AccountInfo accountInfo = new AccountInfo();
+        accountInfo.id = 1;
+        accountInfo.email = email;
+        accountInfo.locked = false;
+        accountInfo.lockCountry = "BR";
+        accountInfo.lastIp = "127.0.0.1";
+        accountInfo.loginTicketExpiry = 3600;
+        accountInfo.isBanned = false;
+        accountInfo.isPermanentBan = false;
+        accountInfo.gameAccountId = 1;
+        accountInfo.gameAccountName = "TestAccount";
+        accountInfo.securityLevel = 0;
+
+        return accountInfo;
+    }
+
+    /**
+     * Data class representing account information retrieved from the database.
+     */
+    public static class AccountInfo {
+        public int id;
+        public String email;
+        public boolean locked;
+        public String lockCountry;
+        public String lastIp;
+        public int loginTicketExpiry;
+        public boolean isBanned;
+        public boolean isPermanentBan;
+        public int gameAccountId;
+        public String gameAccountName;
+        public int securityLevel;
+    }
 }
