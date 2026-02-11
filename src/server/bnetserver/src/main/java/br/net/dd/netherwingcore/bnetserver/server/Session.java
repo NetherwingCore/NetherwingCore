@@ -1,15 +1,20 @@
 package br.net.dd.netherwingcore.bnetserver.server;
 
 import br.net.dd.netherwingcore.bnetserver.services.ServiceDispatcher;
+import br.net.dd.netherwingcore.common.logging.ErrorMessage;
+import br.net.dd.netherwingcore.common.utilities.MessageBuffer;
+import br.net.dd.netherwingcore.proto.BattlenetRpcErrorCode;
 import br.net.dd.netherwingcore.proto.client.RpcTypesProto;
 import br.net.dd.netherwingcore.proto.login.LoginProto;
 import com.google.protobuf.Message;
 
 import javax.net.ssl.SSLSocket;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.InetAddress;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Arrays;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
@@ -30,6 +35,10 @@ public class Session implements Runnable {
     private DataInputStream inputStream;
     private DataOutputStream outputStream;
     private LoginProto.GameAccountInfo accountInfo;
+
+    private MessageBuffer headerLengthBuffer;
+    private MessageBuffer headerBuffer;
+    private MessageBuffer packetBuffer;
 
     /**
      * Constructs a new Session.
@@ -52,26 +61,12 @@ public class Session implements Runnable {
     @Override
     public void run() {
         try {
-            inputStream = new DataInputStream(socket.getInputStream());
-            outputStream = new DataOutputStream(socket.getOutputStream());
 
-            while (!socket.isClosed()) {
-
-                int messageSize = inputStream.readInt();
-
-                if (messageSize <= 0 || messageSize > 0x10000) {
-                    log("Session " + sessionId + " received invalid message size: " + messageSize);
-                    break;
-                }
-
-                byte[] messageData = new byte[messageSize];
-                inputStream.readFully(messageData);
-
-                processMessage(messageData);
-            }
+            processMessage(socket.getInputStream());
 
         } catch (IOException e) {
-            log("Session " + sessionId + " encountered an error: " + e.getMessage());
+            log(new ErrorMessage("Session " + sessionId + " encountered an I/O error: " + e.getMessage()));
+            Arrays.stream(e.getStackTrace()).iterator().forEachRemaining((stackTraceElement) -> log(stackTraceElement.toString()));
         } finally {
             close();
         }
@@ -82,22 +77,59 @@ public class Session implements Runnable {
      *
      * @param data The raw message data.
      */
-    private void processMessage(byte[] data) {
+    private void processMessage(InputStream data) {
         try {
+
+            MessageBuffer packet = new MessageBuffer(0x1000);
+            while (packet.getActiveSize() > 0) {
+                if (readHeaderLenghtHandler(headerLengthBuffer, headerBuffer)) {
+                    return;
+                }
+            }
+
             RpcTypesProto.Header header = RpcTypesProto.Header.parseFrom(data);
+
+            log("Service ID: " + header.getServiceId());
+            log("Service Hash: " + String.format("0x%08X", header.getServiceHash()));
+            log("Method ID: " + header.getMethodId());
+            log("Token: " + header.getToken());
+            log("Data " + Arrays.toString(header.toByteArray()));
 
             serviceDispatcher.dispatch(
                     this,
                     header.getServiceHash(),
                     header.getMethodId(),
                     header.getToken(),
-                    data
+                    data.readAllBytes()
             );
 
         } catch (Exception e) {
-            log("Session " + sessionId + " failed to process message: " + e.getMessage());
-            sendError(0, "INTERNAL_ERROR");
+            log(new ErrorMessage("Session " + sessionId + " encountered an I/O error: " + e.getMessage()));
+            sendError(0, BattlenetRpcErrorCode.ERROR_INTERNAL.name());
         }
+    }
+
+    /**
+     * Reads the header length from the incoming message and prepares the header buffer.
+     *
+     * @param headerLengthBuffer Buffer to read the header length into.
+     * @param headerBuffer       Buffer to prepare for reading the header.
+     * @return true if the header length was successfully read and the header buffer is ready, false otherwise.
+     */
+    private boolean readHeaderLenghtHandler(MessageBuffer headerLengthBuffer, MessageBuffer headerBuffer) {
+
+        // Read the first 2 bytes to determine the header length
+        byte[] len = headerLengthBuffer.getReadPointer();
+
+        // Ensure we have at least 2 bytes to read the header length
+        ByteBuffer buffer = ByteBuffer.wrap(len);
+        buffer.order(ByteOrder.LITTLE_ENDIAN); // Assuming little-endian format for the header length
+        int headerLength = buffer.getShort() & 0xFFFF; // Convert to unsigned
+
+        // Validate header length
+        headerBuffer.resize(headerLength);
+
+        return true;
     }
 
     /**
@@ -118,7 +150,7 @@ public class Session implements Runnable {
             }
 
         } catch (IOException e) {
-            log("Session " + sessionId + " failed to send response: " + e.getMessage());
+            log(new ErrorMessage("Session " + sessionId + " encountered an I/O error: " + e.getMessage()));
             close();
         }
     }
@@ -130,7 +162,7 @@ public class Session implements Runnable {
      * @param errorCode The error code to send.
      */
     public void sendError(int token, String errorCode) {
-        // TODO: Implementar envio de erro
+        log(new ErrorMessage("Session " + sessionId + ", token " + token + ", encountered an error: " + errorCode));
     }
 
     /**
@@ -143,7 +175,7 @@ public class Session implements Runnable {
             }
             onClose.accept(sessionId);
         } catch (IOException e) {
-            log("Session " + sessionId + " encountered an error: " + e.getMessage());
+            log(new ErrorMessage("Session " + sessionId + " encountered an I/O error: " + e.getMessage()));
         }
     }
 

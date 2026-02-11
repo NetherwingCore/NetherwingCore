@@ -1,6 +1,7 @@
 package br.net.dd.netherwingcore.bnetserver.server;
 
 import br.net.dd.netherwingcore.common.cryptography.SSLContextImpl;
+import br.net.dd.netherwingcore.common.logging.ErrorMessage;
 
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
@@ -56,7 +57,7 @@ public class SessionManager {
             log("SessionManager started on port " + port);
 
         } catch (IOException e) {
-            log("SessionManager failed to start on port " + port);
+            log(new ErrorMessage("Failed to start SessionManager on port " + port + e.getMessage()));
         }
     }
 
@@ -78,7 +79,7 @@ public class SessionManager {
 
             } catch (IOException e) {
                 if (running.get()) {
-                    log("Error accepting new connection: " + e.getMessage());
+                    log(new ErrorMessage("Failed to accept new session: " + e.getMessage()));
                 }
             }
         }
@@ -121,7 +122,7 @@ public class SessionManager {
             }
             log("SessionManager stopped.");
         } catch (IOException e) {
-            log("Error stopping SessionManager: " + e.getMessage());
+            log(new ErrorMessage("Failed to stop SessionManager: " + e.getMessage()));
         }
     }
 
