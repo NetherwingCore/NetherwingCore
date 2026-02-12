@@ -76,7 +76,7 @@ public class Banner {
         log("    \\/_/\\/_/\\/____/ \\/__/ \\/_/\\/_/\\/____/ \\/_/   \\/__//__/   \\/_/\\/_/\\/_/\\/___L\\ \\");
         log("                                                                           /\\____/");
         log("    https://github.com/NetherwingCore/NetherwingCore                CORE   \\_/__/ ");
-        log(" ");
+        log("");
     }
 
 }

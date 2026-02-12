@@ -80,7 +80,6 @@ public class SocketManager {
             return  true;
         } catch (Exception e) {
             log("Failed to start server: " + e.getMessage());
-            e.printStackTrace();
             return false;
         }
 
@@ -123,7 +122,6 @@ public class SocketManager {
                         }
                     } catch (Exception e) {
                         Log.error("Error handling key: {}", e.getMessage());
-                        e.printStackTrace();
                         closeSession(key);
                     }
                 }
@@ -318,6 +316,6 @@ public class SocketManager {
             Log.error("Error closing server: {}", e.getMessage());
         }
 
-        Log.info("BnetServer stopped.");
+        log("BnetServer stopped.");
     }
 }

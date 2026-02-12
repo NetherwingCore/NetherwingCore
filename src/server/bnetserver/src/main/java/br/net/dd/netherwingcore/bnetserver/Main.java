@@ -6,6 +6,8 @@ import br.net.dd.netherwingcore.bnetserver.net.SocketManager;
 import br.net.dd.netherwingcore.bnetserver.rest.LoginRESTService;
 import br.net.dd.netherwingcore.common.banner.Banner;
 import br.net.dd.netherwingcore.common.configuration.Config;
+import br.net.dd.netherwingcore.common.logging.Log;
+import br.net.dd.netherwingcore.common.logging.LogFile;
 
 import static br.net.dd.netherwingcore.common.logging.Log.log;
 
@@ -34,16 +36,18 @@ public class Main {
             return;
         }
 
+        Log.info("NetherwingCore BNet Server is running", new LogFile("bnetserver.log"));
+
+
         // Adds a hook to capture Ctrl+C.
         Runtime.getRuntime().addShutdownHook(new Thread(Main::stopServices));
 
     }
 
     public static void stopServices() {
-        log("Stopping NetherwingCore BNet Server...");
-
         LoginRESTService.stop();
         socketManager.stop();
+        Log.info("NetherwingCore BNet Server stopped successfully.", new  LogFile("bnetserver.log"));
     }
 
 }

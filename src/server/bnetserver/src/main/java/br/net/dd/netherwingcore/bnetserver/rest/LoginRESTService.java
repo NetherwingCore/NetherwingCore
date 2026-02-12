@@ -84,7 +84,7 @@ public class LoginRESTService {
         } else {
 
             if (server != null) {
-                log("Login REST Service has already been initialized at https://localhost:" + loginRestPort + "/bnetserver/");
+                log("Login REST Service has already been initialized at https://localhost:{}/bnetserver/", loginRestPort);
             }
 
         }

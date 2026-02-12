@@ -3,15 +3,16 @@ package br.net.dd.netherwingcore.common.logging;
 import java.nio.file.Path;
 
 /**
- * Represents a record that encapsulates one or more file paths related to logging.
- * <p>
- * This class is implemented as a Java record, providing a compact and immutable
- * way to store and operate on a collection of paths. It can be used to aggregate
- * logging-related file paths in a structured manner.
- * </p>
+ * Represents a log file target for logging messages. This record encapsulates the filename(s) of the log file(s)
+ * where log messages should be written. It implements the {@link Detail} interface, allowing it to be used as
+ * a detail in log messages to specify the target log file(s).
  *
- * @param paths an array of {@link Path} objects representing the file paths related to logs.
- *              Multiple paths may be provided as part of the logging operations.
+ * <p>Example usage:</p>
+ * <pre>
+ *     Log.log("This is an informational message.", new LogFile("application.log"));
+ * </pre>
+ *
+ * @param filename The name(s) of the log file(s) where messages should be logged.
  */
-public record LogFile(Path... paths) implements Detail {
+public record LogFile(String... filename) implements Detail {
 }

@@ -1,8 +1,11 @@
 package br.net.dd.netherwingcore.common.logging;
 
+import br.net.dd.netherwingcore.common.configuration.Config;
 import br.net.dd.netherwingcore.common.serialization.FileManager;
 import br.net.dd.netherwingcore.common.utilities.DataFormat;
+import br.net.dd.netherwingcore.common.utilities.Util;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -101,19 +104,17 @@ public class Log {
      *                Supported details are {@link Message} and {@link LogFile}.
      */
     public static void log(Detail... details) {
-        AtomicReference<Level> level = new AtomicReference<>(Level.INFORMATION);
         AtomicReference<String> message = new AtomicReference<>("No message provided.");
-        List<Path> logFiles = new ArrayList<>();
+        List<String> logFileNames = new ArrayList<>();
 
         // Process each detail to extract message, logging level, and file paths
         Arrays.stream(details).forEach(detail -> {
 
             if (detail instanceof Message) {
-                level.set(((Message) detail).getLevel());
                 message.set(((Message) detail).getMessage());
             }
             if (detail instanceof LogFile) {
-                Arrays.stream(((LogFile) detail).paths()).iterator().forEachRemaining(logFiles::add);
+                logFileNames.addAll(Arrays.asList(((LogFile) detail).filename()));
             }
         });
 
@@ -121,9 +122,16 @@ public class Log {
         System.out.println(message.get());
 
         // Write the log message to the specified files
-        logFiles.forEach(path -> {
-            System.out.println("Logging to file: " + path.toString());
-            FileManager.write("[" + level.get().name() + "] " + message.get(), path);
+        logFileNames.forEach(fileName -> {
+
+            String logsDir = Config.get("LogsDir", "").replace("\"", "");
+            if (logsDir.isEmpty()) {
+                logsDir = Util.getJarLocation();
+            }
+
+            Path filePath = new File(logsDir + File.separator + fileName).toPath();
+
+            FileManager.write(message.get(), filePath);
         });
 
     }
