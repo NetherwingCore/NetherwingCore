@@ -38,10 +38,10 @@ public class Session {
     private final MessageBuffer readBuffer;
 
     // Buffers for SSL encryption/decryption (if needed).
-    private ByteBuffer sslNetBuffer;      // Encrypted data read from the socket
+    private final ByteBuffer sslNetBuffer;      // Encrypted data read from the socket
     private ByteBuffer sslAppBuffer;      // Decrypted application data
-    private ByteBuffer sslOutNetBuffer;   // Data to send (encrypted)
-    private ByteBuffer sslOutAppBuffer;   // Data to send (decrypted)
+    private final ByteBuffer sslOutNetBuffer;   // Data to send (encrypted)
+    private final ByteBuffer sslOutAppBuffer;   // Data to send (decrypted)
 
     // Queue for outgoing messages to be written to the socket.
     private final ConcurrentLinkedQueue<MessageBuffer> writeQueue;
@@ -372,8 +372,14 @@ public class Session {
      * @return true if the header length was read successfully, false if there was an error.
      */
     private boolean readHeaderLengthHandler() {
+        if (headerLengthBuffer.getActiveSize() < 2) {
+            return false;
+        }
+
         byte[] lengthBytes = headerLengthBuffer.getReadPointer(2);
         int headerLength = ((lengthBytes[1] & 0xFF) << 8) | (lengthBytes[0] & 0xFF);
+
+        Log.debug("{} Header length: {}", getClientInfo(), String.valueOf(headerLength));
 
         headerBuffer.resize(headerLength);
         return true;
@@ -390,10 +396,13 @@ public class Session {
 
             // Prepare a buffer for the payload.
             packetBuffer.resize(header.getSize());
+
+            Log.debug("{} Header parsed: size={}", getClientInfo(), String.valueOf(header.getSize()));
+
             return true;
 
         } catch (InvalidProtocolBufferException e) {
-            log("Failed to parse header: " + e.getMessage());
+            Log.error("{} Failed to parse header: {}", getClientInfo(), e.getMessage());
             return false;
         }
     }
@@ -408,11 +417,12 @@ public class Session {
             // Reparses the header
             Header header = Header.parseFrom(headerBuffer.toArray());
 
-            log(getClientInfo() +
-                    " received request service_hash=" + header.getServiceHash() +
-                    " method_id=" + header.getMethodId() +
-                    " token=" + header.getToken() +
-                    " size=" + header.getSize());
+            Log.debug("{} received request service_hash={} method_id={} token={} size={}",
+                     getClientInfo(),
+                     String.valueOf(header.getServiceHash()),
+                     String.valueOf(header.getMethodId()),
+                     String.valueOf(header.getToken()),
+                     String.valueOf(header.getSize()));
 
             // Dispatch to the correct service.
             serviceDispatcher.dispatch(
@@ -426,7 +436,7 @@ public class Session {
             return true;
 
         } catch (InvalidProtocolBufferException e) {
-            log("Failed to parse header in data handler: " + e.getMessage());
+            Log.error("{} Failed to parse data received: {}", getClientInfo(), e.getMessage());
             return false;
         }
     }
@@ -493,6 +503,9 @@ public class Session {
 
         // Add to the write queue
         writeQueue.offer(packet);
+
+        Log.debug("{} Queued response: token={}, size={}",
+                getClientInfo(), String.valueOf(token), String.valueOf(packet.getActiveSize()));
     }
 
     /**
@@ -515,6 +528,10 @@ public class Session {
         packet.write(header.toByteArray());
 
         writeQueue.offer(packet);
+
+        Log.debug("{} Queued error response: token={}, status={}",
+                getClientInfo(), String.valueOf(token), String.valueOf(status));
+
     }
 
     /**
@@ -525,18 +542,43 @@ public class Session {
      * @throws IOException If there is an error writing to the socket.
      */
     public boolean processWriteQueue() throws IOException {
+
+        if (handshakeState == HandshakeState.COMPLETED) {
+            return true; // No need to write anything if handshake is completed and there are no responses to send.
+        }
+
         while (!writeQueue.isEmpty()) {
             MessageBuffer packet = writeQueue.peek();
 
-            ByteBuffer buffer = ByteBuffer.wrap(packet.toArray());
-            int bytesWritten = socketChannel.write(buffer);
+            sslOutAppBuffer.clear();
+            sslOutAppBuffer.put(packet.toArray());
+            sslOutAppBuffer.flip();
 
-            if (bytesWritten < packet.getActiveSize()) {
-                // If you couldn't write everything, try again in the next iteration.
+            sslOutNetBuffer.clear();
+            SSLEngineResult wrapResult = sslEngine.wrap(sslOutAppBuffer, sslOutNetBuffer);
+
+            if (wrapResult.getStatus() != SSLEngineResult.Status.OK) {
+                Log.error("{} Failed to encrypt packet: {}",
+                        getClientInfo(), String.valueOf(wrapResult.getStatus()));
                 return false;
             }
 
-            writeQueue.poll(); // Remove da fila
+            sslOutNetBuffer.flip();
+
+            int totalWritten = 0;
+            while (sslOutNetBuffer.hasRemaining()) {
+                int bytesWritten = socketChannel.write(sslOutNetBuffer);
+                if (bytesWritten == 0) {
+                    return false;
+                }
+                totalWritten += bytesWritten;
+            }
+
+            Log.debug("{} Sent encrypted packet: {} bytes",
+                    getClientInfo(), String.valueOf(totalWritten));
+
+            writeQueue.poll();
+
         }
 
         return true;
@@ -548,10 +590,13 @@ public class Session {
      */
     public void closeSocket() {
         try {
+            if (sslEngine != null && !sslEngine.isOutboundDone()) {
+                sslEngine.closeOutbound();
+            }
             socketChannel.close();
-            log("Session closed for " + getClientInfo());
+            Log.info("{} Session closed", getClientInfo());
         } catch (IOException e) {
-            log("Error closing socket: " + e.getMessage());
+            Log.error("{} Error closing socket: {}", getClientInfo(), e.getMessage());
         }
     }
 
