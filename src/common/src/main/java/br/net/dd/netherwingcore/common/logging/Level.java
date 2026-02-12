@@ -41,5 +41,12 @@ public enum Level {
     /**
      * Represents debug-level information used for development and troubleshooting purposes.
      */
-    DEBUG
+    DEBUG,
+
+    /**
+     * Represents log messages that are intended to be output to the console.
+     * This level is used for messages that should be visible in the console output,
+     * regardless of the configured log file targets.
+     */
+    CONSOLE
 }
