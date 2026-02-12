@@ -155,7 +155,7 @@ public class SocketManager {
             clientChannel.socket().setTcpNoDelay(true); // Disable Nagle's algorithm for lower latency.
             clientChannel.socket().setSoTimeout(0);     // No timeout, we will handle idle connections ourselves.
 
-            Log.info("Accepted connection from " + clientChannel.getRemoteAddress());
+            Log.info("{} Accepted connection from {}", getClass().getSimpleName(), clientChannel.getRemoteAddress());
 
             // Create an SSL engine for the new connection.
             SSLEngine sslEngine = sslContext.createSSLEngine();
@@ -203,39 +203,61 @@ public class SocketManager {
             return;
         }
 
+        Log.debug("Received data from channel: " + session.getClientInfo());
+
         try {
             tempBuffer.clear();
+
+            // Check how many bytes are available for reading.
+            Log.debug("{} SocketManager.handleRead() called", session.getClientInfo());
+
             int bytesRead = session.readFromSocket(tempBuffer);
+
+            Log.debug("{} SocketManager.handleRead() bytes read, bytesRead: {}", session.getClientInfo(), bytesRead);
 
             if (bytesRead == -1) {
                 // Customer disconnected
-                Log.debug("{} Client disconnected", session.getClientInfo());
+                Log.debug("{} Client disconnected during read", session.getClientInfo());
                 closeSession(key);
-                return;
+                //return;
             }
 
+            Log.debug("{} Read {} bytes from socket", session.getClientInfo(), bytesRead);
+
             if (bytesRead > 0) {
+                Log.debug("{} Read {} bytes, processing...",
+                        session.getClientInfo(), bytesRead);
+
                 // Processes received data.
                 SocketReadCallbackResult result = session.readHandler();
 
                 if (result == SocketReadCallbackResult.STOP) {
+                    Log.warn("{} Read handler requested stop", session.getClientInfo());
                     closeSession(key);
                     return;
                 }
             }
+
+            Log.debug("{} Read complete, bytesRead: {}, checking write queue...",
+                    session.getClientInfo(), bytesRead);
 
             // If there is data in the write queue, register interest in WRITE.
             try {
                 if (session.hasDataToWrite()) {
                     key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
                 } else {
-                    key.interestOps(SelectionKey.OP_READ);
+                    key.interestOps(SelectionKey.OP_READ); // No data to write, only interested in reading.
                 }
+                Log.debug("{} Updated interestOps after read, bytesRead: {}, current interestOps: {}",
+                        session.getClientInfo(), bytesRead, key.interestOps());
             } catch (CancelledKeyException e) {
                 // Key was canceled, session closed.
                 Log.debug("{} Key cancelled, closing session", session.getClientInfo());
                 closeSession(key);
             }
+
+            Log.debug("{} Finished handleRead, bytesRead: {}, current interestOps: {}",
+                    session.getClientInfo(), bytesRead, key.interestOps());
 
         } catch (IOException e) {
             Log.error("{} IOException during read: {}",

@@ -196,6 +196,15 @@ public class Session {
                             readBuffer.write(data);
                             Log.debug("{} Stored {} bytes of application data",
                                     getClientInfo(), data.length);
+
+                            boolean isTraceEnabled = true; // Set to true to enable hex dump of received data
+                            if (isTraceEnabled) { // TODO: Make this configurable
+                                StringBuilder hex = new StringBuilder();
+                                for (int i = 0; i < Math.min(data.length, 64); i++) {
+                                    hex.append(String.format("%02X ", data[i]));
+                                }
+                                Log.debug("{} First bytes: {}", getClientInfo(), hex);
+                            }
                         }
                         break;
 
@@ -403,8 +412,10 @@ public class Session {
             return SocketReadCallbackResult.KEEP_READING;
         }
 
-        if (readBuffer.getActiveSize() == 0) {
-            Log.debug("{} No application data to process", getClientInfo());
+        int availableData = readBuffer.getActiveSize();
+
+        if (availableData == 0) {
+            Log.debug("{} No application data to process yet", getClientInfo());
             return SocketReadCallbackResult.KEEP_READING;
         }
 
@@ -447,11 +458,15 @@ public class Session {
      */
     private boolean readHeaderLengthHandler() {
         if (headerLengthBuffer.getActiveSize() < 2) {
+            Log.debug("{} Waiting for header length (have {} bytes)",
+                    getClientInfo(), headerLengthBuffer.getActiveSize());
             return false;
         }
 
         byte[] lengthBytes = headerLengthBuffer.getReadPointer(2);
         int headerLength = ((lengthBytes[1] & 0xFF) << 8) | (lengthBytes[0] & 0xFF);
+
+        Log.debug("{} Header length: {} bytes", getClientInfo(), headerLength);
 
         headerBuffer.resize(headerLength);
         headerLengthBuffer.readCompleted(2);
@@ -466,8 +481,23 @@ public class Session {
      * @return true if the header was successfully read and processed, false if there was a parsing error or more data is needed.
      */
     private boolean readHeaderHandler() {
+
+        if (headerBuffer.getRemainingSpace() > 0) {
+            Log.debug("{} Waiting for complete header (need {} more bytes)",
+                    getClientInfo(), headerBuffer.getRemainingSpace());
+            return false;
+        }
+
         try {
             Header header = Header.parseFrom(headerBuffer.toArray());
+
+            Log.debug("{} Header parsed: service=0x{}, method={}, token={}, size={}",
+                    getClientInfo(),
+                    Integer.toHexString(header.getServiceHash()).toUpperCase(),
+                    header.getMethodId(),
+                    header.getToken(),
+                    header.getSize());
+
             packetBuffer.resize(header.getSize());
             return true;
         } catch (InvalidProtocolBufferException e) {
@@ -484,6 +514,12 @@ public class Session {
      * @return true if the data was successfully read and dispatched, false if there was a parsing error.
      */
     private boolean readDataHandler() {
+        if (packetBuffer.getRemainingSpace() > 0) {
+            Log.debug("{} Waiting for complete payload (need {} more bytes)",
+                    getClientInfo(), packetBuffer.getRemainingSpace());
+            return false;
+        }
+
         try {
             Header header = Header.parseFrom(headerBuffer.toArray());
 
