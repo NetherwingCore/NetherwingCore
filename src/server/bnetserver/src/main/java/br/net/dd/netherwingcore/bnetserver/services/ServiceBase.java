@@ -1,14 +1,15 @@
 package br.net.dd.netherwingcore.bnetserver.services;
 
 import br.net.dd.netherwingcore.bnetserver.server.Session;
+import br.net.dd.netherwingcore.common.logging.Log;
 import br.net.dd.netherwingcore.common.utilities.MessageBuffer;
 import br.net.dd.netherwingcore.proto.BattlenetRpcErrorCode;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 
-import static br.net.dd.netherwingcore.common.logging.Log.log;
-
 public abstract class ServiceBase {
+
+    private static final Log logger = Log.getLogger(ServiceBase.class.getSimpleName());
 
     /**
      * Base class for all services. Each service must implement the getServiceHash method to return its unique hash,
@@ -45,7 +46,7 @@ public abstract class ServiceBase {
             T message = (T) builder.build();
             return message;
         } catch (InvalidProtocolBufferException e) {
-            log("Failed to parse " + methodName + " request: " + e.getMessage());
+            logger.log("Failed to parse " + methodName + " request: " + e.getMessage());
             return null;
         }
     }

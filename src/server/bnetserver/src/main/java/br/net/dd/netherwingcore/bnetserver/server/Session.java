@@ -16,14 +16,14 @@ import java.nio.channels.SocketChannel;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import static br.net.dd.netherwingcore.common.logging.Log.log;
-
 /**
  * Represents a client session in the BNet server. This class manages the state of a single client connection,
  * including reading and writing data, handling SSL encryption/decryption, and dispatching requests to the appropriate services.
  * Each session is associated with a SocketChannel and an SSLEngine for secure communication.
  */
 public class Session {
+
+    private static final Log logger = Log.getLogger(Session.class.getSimpleName());
 
     private final SocketChannel socketChannel;
     private final SSLEngine sslEngine;
@@ -85,7 +85,7 @@ public class Session {
 
         this.lastActivityTime = System.currentTimeMillis();
 
-        log("New session created for " + getClientInfo());
+        logger.log("New session created for " + getClientInfo());
     }
 
     /**
@@ -94,17 +94,17 @@ public class Session {
      */
     public void start() {
 
-        Log.debug("{} Starting SSL handshake", getClientInfo());
+        logger.debug("{} Starting SSL handshake", getClientInfo());
 
         try {
             // Starts the SSL handshake process.
             sslEngine.beginHandshake();
 
-            Log.debug("{} Handshake status: {}",
+            logger.debug("{} Handshake status: {}",
                     getClientInfo(), String.valueOf(sslEngine.getHandshakeStatus()));
 
         } catch (IOException e) {
-            Log.error("{} Failed to start SSL handshake: {}",
+            logger.error("{} Failed to start SSL handshake: {}",
                     getClientInfo(), e.getMessage());
             closeSocket();
         }
@@ -144,7 +144,7 @@ public class Session {
         int bytesRead = socketChannel.read(peerNetData);
 
         if (bytesRead > 0) {
-            Log.debug("{} Read {} bytes from network", getClientInfo(), bytesRead);
+            logger.debug("{} Read {} bytes from network", getClientInfo(), bytesRead);
 
             updateActivity();
             peerNetData.flip();
@@ -157,14 +157,14 @@ public class Session {
                 try {
                     result = sslEngine.unwrap(peerNetData, peerAppData);
                 } catch (SSLException e) {
-                    Log.error("{} SSLException during unwrap: {}",
+                    logger.error("{} SSLException during unwrap: {}",
                             getClientInfo(), e.getMessage());
                     // Don't close immediately, let the connection recover
                     peerNetData.compact();
                     return bytesRead;
                 }
 
-                Log.debug("{} unwrap: status={}, hsStatus={}, consumed={}, produced={}",
+                logger.debug("{} unwrap: status={}, hsStatus={}, consumed={}, produced={}",
                         getClientInfo(),
                         result.getStatus(),
                         result.getHandshakeStatus(),
@@ -185,7 +185,7 @@ public class Session {
                                 (result.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.FINISHED ||
                                         result.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING)) {
                             initialHandshakeDone = true;
-                            Log.info("{} SSL handshake completed, ready for application data",
+                            logger.info("{} SSL handshake completed, ready for application data",
                                     getClientInfo());
                         }
 
@@ -194,7 +194,7 @@ public class Session {
                             byte[] data = new byte[peerAppData.remaining()];
                             peerAppData.get(data);
                             readBuffer.write(data);
-                            Log.debug("{} Stored {} bytes of application data",
+                            logger.debug("{} Stored {} bytes of application data",
                                     getClientInfo(), data.length);
 
                             boolean isTraceEnabled = true; // Set to true to enable hex dump of received data
@@ -203,7 +203,7 @@ public class Session {
                                 for (int i = 0; i < Math.min(data.length, 64); i++) {
                                     hex.append(String.format("%02X ", data[i]));
                                 }
-                                Log.debug("{} First bytes: {}", getClientInfo(), hex);
+                                logger.debug("{} First bytes: {}", getClientInfo(), hex);
                             }
                         }
                         break;
@@ -215,12 +215,12 @@ public class Session {
 
                     case BUFFER_UNDERFLOW:
                         // Need more network data - this is NORMAL
-                        Log.debug("{} Buffer underflow, waiting for more data", getClientInfo());
+                        logger.debug("{} Buffer underflow, waiting for more data", getClientInfo());
                         peerNetData.compact();
                         return bytesRead;
 
                     case CLOSED:
-                        Log.info("{} Peer closed SSL connection cleanly", getClientInfo());
+                        logger.info("{} Peer closed SSL connection cleanly", getClientInfo());
                         closeSocket();
                         return -1;
                 }
@@ -230,15 +230,15 @@ public class Session {
 
         } else if (bytesRead == 0) {
             // No data available - this is NORMAL for non-blocking I/O
-            Log.debug("{} No data available to read", getClientInfo());
+            logger.debug("{} No data available to read", getClientInfo());
             return 0;
 
         } else { // bytesRead < 0
             // Only log and close if we're sure it's EOF
             if (initialHandshakeDone) {
-                Log.info("{} Client disconnected (EOF)", getClientInfo());
+                logger.info("{} Client disconnected (EOF)", getClientInfo());
             } else {
-                Log.warn("{} Client disconnected before handshake completed", getClientInfo());
+                logger.warn("{} Client disconnected before handshake completed", getClientInfo());
             }
             closeSocket();
             return -1;
@@ -261,14 +261,14 @@ public class Session {
         SSLEngineResult.HandshakeStatus hsStatus = sslEngine.getHandshakeStatus();
 
         if (hsStatus == SSLEngineResult.HandshakeStatus.NEED_WRAP) {
-            Log.debug("{} Handshake needs WRAP", getClientInfo());
+            logger.debug("{} Handshake needs WRAP", getClientInfo());
 
             myAppData.clear();
             myNetData.clear();
 
             SSLEngineResult result = sslEngine.wrap(myAppData, myNetData);
 
-            Log.debug("{} wrap: status={}, hsStatus={}, produced={}",
+            logger.debug("{} wrap: status={}, hsStatus={}, produced={}",
                     getClientInfo(),
                     result.getStatus(),
                     result.getHandshakeStatus(),
@@ -290,7 +290,7 @@ public class Session {
                         (result.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.FINISHED ||
                                 result.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING)) {
                     initialHandshakeDone = true;
-                    Log.info("{} SSL handshake completed (after wrap)", getClientInfo());
+                    logger.info("{} SSL handshake completed (after wrap)", getClientInfo());
                 }
             }
         }
@@ -324,7 +324,7 @@ public class Session {
                         }
                     }
 
-                    Log.debug("{} Sent encrypted packet: {} bytes",
+                    logger.debug("{} Sent encrypted packet: {} bytes",
                             getClientInfo(), result.bytesProduced());
 
                     writeQueue.poll(); // Successfully sent
@@ -335,11 +335,11 @@ public class Session {
                     break;
 
                 case BUFFER_UNDERFLOW:
-                    Log.fatal("{} End of stream", getClientInfo());
+                    logger.fatal("{} End of stream", getClientInfo());
                     throw new SSLException("Buffer underflow during wrap");
 
                 case CLOSED:
-                    Log.warn("{} SSL closed, can't send data", getClientInfo());
+                    logger.warn("{} SSL closed, can't send data", getClientInfo());
                     closeSocket();
                     return false;
             }
@@ -408,18 +408,18 @@ public class Session {
      */
     public SocketReadCallbackResult readHandler() {
         if (!initialHandshakeDone) {
-            Log.debug("{} Handshake not done, skipping read handler", getClientInfo());
+            logger.debug("{} Handshake not done, skipping read handler", getClientInfo());
             return SocketReadCallbackResult.KEEP_READING;
         }
 
         int availableData = readBuffer.getActiveSize();
 
         if (availableData == 0) {
-            Log.debug("{} No application data to process yet", getClientInfo());
+            logger.debug("{} No application data to process yet", getClientInfo());
             return SocketReadCallbackResult.KEEP_READING;
         }
 
-        Log.debug("{} Processing {} bytes of application data",
+        logger.debug("{} Processing {} bytes of application data",
                 getClientInfo(), readBuffer.getActiveSize());
 
         while (readBuffer.getActiveSize() > 0) {
@@ -458,7 +458,7 @@ public class Session {
      */
     private boolean readHeaderLengthHandler() {
         if (headerLengthBuffer.getActiveSize() < 2) {
-            Log.debug("{} Waiting for header length (have {} bytes)",
+            logger.debug("{} Waiting for header length (have {} bytes)",
                     getClientInfo(), headerLengthBuffer.getActiveSize());
             return false;
         }
@@ -466,7 +466,7 @@ public class Session {
         byte[] lengthBytes = headerLengthBuffer.getReadPointer(2);
         int headerLength = ((lengthBytes[1] & 0xFF) << 8) | (lengthBytes[0] & 0xFF);
 
-        Log.debug("{} Header length: {} bytes", getClientInfo(), headerLength);
+        logger.debug("{} Header length: {} bytes", getClientInfo(), headerLength);
 
         headerBuffer.resize(headerLength);
         headerLengthBuffer.readCompleted(2);
@@ -483,7 +483,7 @@ public class Session {
     private boolean readHeaderHandler() {
 
         if (headerBuffer.getRemainingSpace() > 0) {
-            Log.debug("{} Waiting for complete header (need {} more bytes)",
+            logger.debug("{} Waiting for complete header (need {} more bytes)",
                     getClientInfo(), headerBuffer.getRemainingSpace());
             return false;
         }
@@ -491,7 +491,7 @@ public class Session {
         try {
             Header header = Header.parseFrom(headerBuffer.toArray());
 
-            Log.debug("{} Header parsed: service=0x{}, method={}, token={}, size={}",
+            logger.debug("{} Header parsed: service=0x{}, method={}, token={}, size={}",
                     getClientInfo(),
                     Integer.toHexString(header.getServiceHash()).toUpperCase(),
                     header.getMethodId(),
@@ -501,7 +501,7 @@ public class Session {
             packetBuffer.resize(header.getSize());
             return true;
         } catch (InvalidProtocolBufferException e) {
-            Log.error("{} Failed to parse header: {}", getClientInfo(), e.getMessage());
+            logger.error("{} Failed to parse header: {}", getClientInfo(), e.getMessage());
             return false;
         }
     }
@@ -515,7 +515,7 @@ public class Session {
      */
     private boolean readDataHandler() {
         if (packetBuffer.getRemainingSpace() > 0) {
-            Log.debug("{} Waiting for complete payload (need {} more bytes)",
+            logger.debug("{} Waiting for complete payload (need {} more bytes)",
                     getClientInfo(), packetBuffer.getRemainingSpace());
             return false;
         }
@@ -523,7 +523,7 @@ public class Session {
         try {
             Header header = Header.parseFrom(headerBuffer.toArray());
 
-            Log.debug("{} Request: service=0x{}, method={}, token={}, size={}",
+            logger.debug("{} Request: service=0x{}, method={}, token={}, size={}",
                     getClientInfo(),
                     Integer.toHexString(header.getServiceHash()).toUpperCase(),
                     header.getMethodId(),
@@ -535,7 +535,7 @@ public class Session {
 
             return true;
         } catch (InvalidProtocolBufferException e) {
-            Log.error("{} Failed to parse data: {}", getClientInfo(), e.getMessage());
+            logger.error("{} Failed to parse data: {}", getClientInfo(), e.getMessage());
             return false;
         }
     }
@@ -641,9 +641,9 @@ public class Session {
                 sslEngine.closeOutbound();
             }
             socketChannel.close();
-            Log.info("{} Session closed", getClientInfo());
+            logger.info("{} Session closed", getClientInfo());
         } catch (IOException e) {
-            Log.error("{} Error closing: {}", getClientInfo(), e.getMessage());
+            logger.error("{} Error closing: {}", getClientInfo(), e.getMessage());
         }
     }
 

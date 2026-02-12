@@ -17,6 +17,8 @@ import static br.net.dd.netherwingcore.proto.client.AttributeTypesProto.*;
  */
 public class GameUtilitiesService extends ServiceBase {
 
+    private static final Log logger = Log.getLogger(GameUtilitiesService.class.getSimpleName());
+
     private static final int SERVICE_HASH = 0x3FC1274D;
 
     private static final int METHOD_PROCESS_CLIENT_REQUEST = 1;
@@ -55,7 +57,7 @@ public class GameUtilitiesService extends ServiceBase {
                 handleGetAllValuesForAttribute(session, token, buffer);
                 break;
             default:
-                Log.warn("Unknown method ID {} for GameUtilitiesService", String.valueOf(methodId));
+                logger.warn("Unknown method ID {} for GameUtilitiesService", String.valueOf(methodId));
                 sendErrorResponse(session, token, ERROR_RPC_NOT_IMPLEMENTED);
         }
     }

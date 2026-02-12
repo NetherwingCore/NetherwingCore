@@ -15,6 +15,8 @@ import static br.net.dd.netherwingcore.proto.client.RpcTypesProto.*;
  */
 public class ConnectionService extends ServiceBase {
 
+    private static final Log logger = Log.getLogger(ConnectionService.class.getSimpleName());
+
     private static final int SERVICE_HASH = 0x65446991;
 
     private static final int METHOD_CONNECT = 1;
@@ -89,7 +91,7 @@ public class ConnectionService extends ServiceBase {
 
         sendResponse(session, token, responseBuilder.build());
 
-        Log.debug("{} Connected successfully", session.getClientInfo());
+        logger.debug("{} Connected successfully", session.getClientInfo());
     }
 
     /**

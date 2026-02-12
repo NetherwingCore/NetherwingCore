@@ -12,6 +12,8 @@ import static br.net.dd.netherwingcore.proto.BattlenetRpcErrorCode.*;
 
 public class AuthenticationService extends ServiceBase {
 
+    private static final Log logger = Log.getLogger(AuthenticationService.class.getSimpleName());
+
     private static final int SERVICE_HASH = 0xDECFC01;  // Hash do Authentication Service
 
     // Method IDs
@@ -33,7 +35,7 @@ public class AuthenticationService extends ServiceBase {
                 handleVerifyWebCredentials(session, token, buffer);
                 break;
             default:
-                Log.warn("Unknown method ID: {} for Authentication Service", String.valueOf(methodId));
+                logger.warn("Unknown method ID: {} for Authentication Service", String.valueOf(methodId));
                 sendErrorResponse(session, token, ERROR_RPC_NOT_IMPLEMENTED);
         }
     }
@@ -47,20 +49,20 @@ public class AuthenticationService extends ServiceBase {
             return;
         }
 
-        Log.info("{} Logon request for program: {}", session.getClientInfo(), request.getBattleTag());
+        logger.info("{} Logon request for program: {}", session.getClientInfo(), request.getBattleTag());
 
         // TODO: Implement the actual authentication logic here, verifying the user's credentials and generating a valid session token.
         String email = request.getEmail();
         LoginDatabase.AccountInfo accountInfo = LoginDatabase.getAccountByEmail(email);
 
         if (accountInfo.id == 0) {
-            Log.warn("No account found for email: {}", email);
+            logger.warn("No account found for email: {}", email);
             sendErrorResponse(session, token, ERROR_DENIED);
             return;
         }
 
         if (accountInfo.isBanned) {
-            Log.warn("Account with email {} is banned", email);
+            logger.warn("Account with email {} is banned", email);
             sendErrorResponse(session, token, ERROR_DENIED);
             return;
         }
@@ -75,7 +77,7 @@ public class AuthenticationService extends ServiceBase {
 
         sendResponse(session, token, responseBuilder.build());
 
-        Log.info("Account {} successfully authenticated", email);
+        logger.info("Account {} successfully authenticated", email);
     }
 
     private void handleVerifyWebCredentials(Session session, int token, MessageBuffer buffer) {
@@ -90,11 +92,11 @@ public class AuthenticationService extends ServiceBase {
 
             // TODO: Implement the actual verification logic for the web credentials here, checking them against the database or an external service as needed.
 
-            Log.info("{} VerifyWebCredentials request with credentials: {}", session.getClientInfo(), webCredentials);
+            logger.info("{} VerifyWebCredentials request with credentials: {}", session.getClientInfo(), webCredentials);
 
             // For demonstration purposes, we'll just accept any non-empty credentials and return a success response.
             if (webCredentials.isEmpty()) {
-                Log.warn("Empty web credentials provided");
+                logger.warn("Empty web credentials provided");
                 sendErrorResponse(session, token, ERROR_DENIED);
                 return;
             }

@@ -1,12 +1,11 @@
 package br.net.dd.netherwingcore.bnetserver.services;
 
 import br.net.dd.netherwingcore.bnetserver.server.Session;
+import br.net.dd.netherwingcore.common.logging.Log;
 import br.net.dd.netherwingcore.common.utilities.MessageBuffer;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static br.net.dd.netherwingcore.common.logging.Log.log;
 
 /**
  * The ServiceDispatcher is responsible for routing incoming RPC calls to the appropriate service based on the service hash.
@@ -15,6 +14,8 @@ import static br.net.dd.netherwingcore.common.logging.Log.log;
  * the session, token, method ID, and packet buffer.
  */
 public class ServiceDispatcher {
+
+    private static final Log logger = Log.getLogger(ServiceDispatcher.class.getSimpleName());
 
     private static final ServiceDispatcher INSTANCE = new ServiceDispatcher();
 
@@ -49,7 +50,7 @@ public class ServiceDispatcher {
         addService(new ConnectionService());
         addService(new GameUtilitiesService());
 
-        log("ServiceDispatcher initialized with " + dispatchers.size() + " services.");
+        logger.log("ServiceDispatcher initialized with " + dispatchers.size() + " services.");
     }
 
     /**
@@ -64,7 +65,7 @@ public class ServiceDispatcher {
         int serviceHash = service.getServiceHash();
         dispatchers.put(serviceHash, service::callServerMethod);
 
-        log("Registered service: " + service.getClass().getSimpleName() + " (hash: 0x" + Integer.toHexString(serviceHash) + ")");
+        logger.log("Registered service: " + service.getClass().getSimpleName() + " (hash: 0x" + Integer.toHexString(serviceHash) + ")");
     }
 
     /**
@@ -82,10 +83,10 @@ public class ServiceDispatcher {
     public void dispatch(Session session, int serviceHash, int token, int methodId, MessageBuffer buffer) {
         ServiceMethod method = dispatchers.get(serviceHash);
         if (method != null) {
-            log("Dispatching call to service with hash: 0x" + Integer.toHexString(serviceHash) + " (method ID: " + methodId + ")");
+            logger.log("Dispatching call to service with hash: 0x" + Integer.toHexString(serviceHash) + " (method ID: " + methodId + ")");
             method.call(session, token, methodId, buffer);
         } else {
-            log("No service found for hash: 0x" + Integer.toHexString(serviceHash));
+            logger.log("No service found for hash: 0x" + Integer.toHexString(serviceHash));
         }
     }
 

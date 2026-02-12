@@ -1,11 +1,10 @@
 package br.net.dd.netherwingcore.bnetserver.rest.handlers;
 
+import br.net.dd.netherwingcore.common.logging.Log;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
 import java.io.IOException;
-
-import static br.net.dd.netherwingcore.common.logging.Log.log;
 
 /**
  * HandlerGetGameAccounts is responsible for handling requests to the /bnetserver/gameAccounts/ endpoint.
@@ -13,10 +12,12 @@ import static br.net.dd.netherwingcore.common.logging.Log.log;
  */
 public class HandlerGetGameAccounts implements HttpHandler {
 
+    private static final Log logger = Log.getLogger(HandlerGetGameAccounts.class.getSimpleName());
+
     @Override
     public void handle(HttpExchange exchange) throws IOException {
 
-        log("HandlerGetGameAccounts called");
+        logger.log("HandlerGetGameAccounts called");
 
     }
 }

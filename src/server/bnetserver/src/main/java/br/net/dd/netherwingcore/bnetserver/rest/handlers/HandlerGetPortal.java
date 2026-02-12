@@ -1,11 +1,10 @@
 package br.net.dd.netherwingcore.bnetserver.rest.handlers;
 
+import br.net.dd.netherwingcore.common.logging.Log;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
 import java.io.IOException;
-
-import static br.net.dd.netherwingcore.common.logging.Log.log;
 
 /**
  * HandlerGetPortal is responsible for handling requests to the /bnetserver/portal/ endpoint.
@@ -13,10 +12,12 @@ import static br.net.dd.netherwingcore.common.logging.Log.log;
  */
 public class HandlerGetPortal implements HttpHandler {
 
+    private static final Log logger = Log.getLogger(HandlerGetPortal.class.getName());
+
     @Override
     public void handle(HttpExchange exchange) throws IOException {
 
-        log("HandlerGetPortal called");
+        logger.log("HandlerGetPortal called");
 
     }
 

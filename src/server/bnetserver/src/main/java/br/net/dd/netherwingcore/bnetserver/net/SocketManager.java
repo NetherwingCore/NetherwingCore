@@ -16,13 +16,13 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static br.net.dd.netherwingcore.common.logging.Log.log;
-
 /**
  * Manages socket connections for the server, including accepting new connections,
  * reading from and writing to sockets, and handling SSL encryption.
  */
 public class SocketManager {
+
+    private static final Log logger = Log.getLogger(SocketManager.class.getSimpleName());
 
     private final Map<SocketChannel, Session> sessions;
     private Selector selector;
@@ -45,7 +45,7 @@ public class SocketManager {
      */
     private void initSSL() throws Exception {
         sslContext = SSLContextImpl.get();
-        Log.info("SSL context initialized successfully");
+        logger.info("SSL context initialized successfully");
     }
 
     /**
@@ -74,13 +74,13 @@ public class SocketManager {
             serverChannel.register(selector, java.nio.channels.SelectionKey.OP_ACCEPT);
 
             running = true;
-            Log.info("BnetServer listening on {}:{}", bindIp, String.valueOf(port));
+            logger.info("BnetServer listening on {}:{}", bindIp, String.valueOf(port));
 
             new Thread(this::run, "SocketManager-Thread").start();
 
             return  true;
         } catch (Exception e) {
-            log("Failed to start server: " + e.getMessage());
+            logger.log("Failed to start server: " + e.getMessage());
             return false;
         }
 
@@ -109,7 +109,7 @@ public class SocketManager {
                     keyIterator.remove();
 
                     if (!key.isValid()) {
-                        Log.debug("Selected key is invalid");
+                        logger.debug("Selected key is invalid");
                         continue;
                     }
 
@@ -122,7 +122,7 @@ public class SocketManager {
                             handleWrite(key);
                         }
                     } catch (Exception e) {
-                        Log.error("Error handling key: {}", e.getMessage());
+                        logger.error("Error handling key: {}", e.getMessage());
                         closeSession(key);
                     }
                 }
@@ -131,7 +131,7 @@ public class SocketManager {
                 updateSessions();
 
             } catch (IOException e) {
-                Log.error("Error while reading sessions: " + e.getMessage());
+                logger.error("Error while reading sessions: " + e.getMessage());
             }
         }
     }
@@ -155,7 +155,7 @@ public class SocketManager {
             clientChannel.socket().setTcpNoDelay(true); // Disable Nagle's algorithm for lower latency.
             clientChannel.socket().setSoTimeout(0);     // No timeout, we will handle idle connections ourselves.
 
-            Log.info("{} Accepted connection from {}", getClass().getSimpleName(), clientChannel.getRemoteAddress());
+            logger.info("{} Accepted connection from {}", getClass().getSimpleName(), clientChannel.getRemoteAddress());
 
             // Create an SSL engine for the new connection.
             SSLEngine sslEngine = sslContext.createSSLEngine();
@@ -198,47 +198,47 @@ public class SocketManager {
         Session session = sessions.get(channel);
 
         if (session == null) {
-            Log.warn("Session not found for channel");
+            logger.warn("Session not found for channel");
             closeSession(key);
             return;
         }
 
-        Log.debug("Received data from channel: " + session.getClientInfo());
+        logger.debug("Received data from channel: " + session.getClientInfo());
 
         try {
             tempBuffer.clear();
 
             // Check how many bytes are available for reading.
-            Log.debug("{} SocketManager.handleRead() called", session.getClientInfo());
+            logger.debug("{} SocketManager.handleRead() called", session.getClientInfo());
 
             int bytesRead = session.readFromSocket(tempBuffer);
 
-            Log.debug("{} SocketManager.handleRead() bytes read, bytesRead: {}", session.getClientInfo(), bytesRead);
+            logger.debug("{} SocketManager.handleRead() bytes read, bytesRead: {}", session.getClientInfo(), bytesRead);
 
             if (bytesRead == -1) {
                 // Customer disconnected
-                Log.debug("{} Client disconnected during read", session.getClientInfo());
+                logger.debug("{} Client disconnected during read", session.getClientInfo());
                 closeSession(key);
                 //return;
             }
 
-            Log.debug("{} Read {} bytes from socket", session.getClientInfo(), bytesRead);
+            logger.debug("{} Read {} bytes from socket", session.getClientInfo(), bytesRead);
 
             if (bytesRead > 0) {
-                Log.debug("{} Read {} bytes, processing...",
+                logger.debug("{} Read {} bytes, processing...",
                         session.getClientInfo(), bytesRead);
 
                 // Processes received data.
                 SocketReadCallbackResult result = session.readHandler();
 
                 if (result == SocketReadCallbackResult.STOP) {
-                    Log.warn("{} Read handler requested stop", session.getClientInfo());
+                    logger.warn("{} Read handler requested stop", session.getClientInfo());
                     closeSession(key);
                     return;
                 }
             }
 
-            Log.debug("{} Read complete, bytesRead: {}, checking write queue...",
+            logger.debug("{} Read complete, bytesRead: {}, checking write queue...",
                     session.getClientInfo(), bytesRead);
 
             // If there is data in the write queue, register interest in WRITE.
@@ -248,19 +248,19 @@ public class SocketManager {
                 } else {
                     key.interestOps(SelectionKey.OP_READ); // No data to write, only interested in reading.
                 }
-                Log.debug("{} Updated interestOps after read, bytesRead: {}, current interestOps: {}",
+                logger.debug("{} Updated interestOps after read, bytesRead: {}, current interestOps: {}",
                         session.getClientInfo(), bytesRead, key.interestOps());
             } catch (CancelledKeyException e) {
                 // Key was canceled, session closed.
-                Log.debug("{} Key cancelled, closing session", session.getClientInfo());
+                logger.debug("{} Key cancelled, closing session", session.getClientInfo());
                 closeSession(key);
             }
 
-            Log.debug("{} Finished handleRead, bytesRead: {}, current interestOps: {}",
+            logger.debug("{} Finished handleRead, bytesRead: {}, current interestOps: {}",
                     session.getClientInfo(), bytesRead, key.interestOps());
 
         } catch (IOException e) {
-            Log.error("{} IOException during read: {}",
+            logger.error("{} IOException during read: {}",
                     session.getClientInfo(), e.getMessage());
             closeSession(key);
         }
@@ -280,7 +280,7 @@ public class SocketManager {
         Session session = sessions.get(channel);
 
         if (session == null) {
-            log("No session found for channel: " + channel.getRemoteAddress());
+            logger.log("No session found for channel: " + channel.getRemoteAddress());
             return;
         }
 
@@ -292,7 +292,7 @@ public class SocketManager {
             }
 
         } catch (IOException e) {
-            Log.error("Error during write operation: {}", e.getMessage());
+            logger.error("Error during write operation: {}", e.getMessage());
             closeSession(key);
         }
     }
@@ -306,12 +306,12 @@ public class SocketManager {
 
         sessions.values().removeIf(session -> {
             if (!session.isOpen()) {
-                Log.debug("{} Session closed, removing", session.getClientInfo());
+                logger.debug("{} Session closed, removing", session.getClientInfo());
                 return true;
             }
 
             if (session.isIdle(idleTimeout)) {
-                Log.info("{} Session idle for too long, closing", session.getClientInfo());
+                logger.info("{} Session idle for too long, closing", session.getClientInfo());
                 session.closeSocket();
                 return true;
             }
@@ -338,7 +338,7 @@ public class SocketManager {
             key.cancel();
             channel.close();
         } catch (IOException e) {
-            Log.error("Error closing session: {}", e.getMessage());
+            logger.error("Error closing session: {}", e.getMessage());
         }
     }
 
@@ -365,9 +365,9 @@ public class SocketManager {
             }
 
         } catch (IOException e) {
-            Log.error("Error closing server: {}", e.getMessage());
+            logger.error("Error closing server: {}", e.getMessage());
         }
 
-        log("BnetServer stopped.");
+        logger.log("BnetServer stopped.");
     }
 }

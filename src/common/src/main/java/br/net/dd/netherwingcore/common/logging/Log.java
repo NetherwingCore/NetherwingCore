@@ -20,13 +20,37 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class Log {
 
+    private final String className;
+
+    /**
+     * Private constructor to prevent instantiation of the Log class.
+     * This class is designed to be used as a utility for logging, and instances should be obtained through the getLogger method.
+     *
+     * @param className The name of the class for which the logger is being created. This is typically used to include the class name in log messages for better traceability.
+     */
+    private Log(String className) {
+        // Private constructor to prevent instantiation
+        this.className = className;
+    }
+
+    /**
+     * Factory method to obtain a logger instance for a specific class.
+     * This method creates and returns a new Log instance associated with the provided class name.
+     *
+     * @param className The name of the class for which the logger is being created. This is typically the simple name of the class (e.g., MyClass.class.getSimpleName()).
+     * @return A new Log instance that can be used for logging messages related to the specified class.
+     */
+    public static Log getLogger(String className) {
+        return new Log(className);
+    }
+
     /**
      * Logs a simple informational message.
      * By default, the message is logged with the {@link Level#INFORMATION} severity.
      *
      * @param message A string message to log.
      */
-    public static void log(String message, Object... parameters) {
+    public void log(String message, Object... parameters) {
         processLog(message, Level.CONSOLE, parameters);
     }
 
@@ -38,7 +62,7 @@ public class Log {
      * @param parameters Optional parameters to format the message. If provided, the message will be formatted
      *                   using these parameters before logging.
      */
-    public static void info(String message, Object... parameters) {
+    public void info(String message, Object... parameters) {
         processLog(message, Level.INFORMATION, parameters);
     }
 
@@ -50,7 +74,7 @@ public class Log {
      * @param parameters Optional parameters to format the message. If provided, the message will be formatted
      *                   using these parameters before logging.
      */
-    public static void warn(String message, Object... parameters) {
+    public void warn(String message, Object... parameters) {
         processLog(message, Level.WARNING, parameters);
     }
 
@@ -62,7 +86,7 @@ public class Log {
      * @param parameters Optional parameters to format the message. If provided, the message will be formatted
      *                   using these parameters before logging.
      */
-    public static void error(String message, Object... parameters) {
+    public void error(String message, Object... parameters) {
         processLog(message, Level.ERROR, parameters);
     }
 
@@ -74,7 +98,7 @@ public class Log {
      * @param parameters Optional parameters to format the message. If provided, the message will be formatted
      *                   using these parameters before logging.
      */
-    public static void fatal(String message, Object... parameters) {
+    public void fatal(String message, Object... parameters) {
         processLog(message, Level.FATAL_ERROR, parameters);
     }
 
@@ -86,7 +110,7 @@ public class Log {
      * @param parameters Optional parameters to format the message. If provided, the message will be formatted
      *                   using these parameters before logging.
      */
-    public static void debug(String message, Object... parameters) {
+    public void debug(String message, Object... parameters) {
         processLog(message, Level.DEBUG, parameters);
     }
 
@@ -103,7 +127,7 @@ public class Log {
      * @param details Varargs of {@link Detail} providing additional context for the log message.
      *                Supported details are {@link Message} and {@link LogFile}.
      */
-    public static void log(Detail... details) {
+    public void log(Detail... details) {
         AtomicReference<String> message = new AtomicReference<>("No message provided.");
         List<String> logFileNames = new ArrayList<>();
 
@@ -147,7 +171,7 @@ public class Log {
      *               for formatting the message. The method will differentiate between these types to
      *               construct the final log entry appropriately.
      */
-    private static void processLog(String text, Level level, Object[] values) {
+    private void processLog(String text, Level level, Object[] values) {
 
         ArrayList<Detail> detailsList = new ArrayList<>();
         AtomicReference<Message> message = new AtomicReference<>();
@@ -190,13 +214,20 @@ public class Log {
      *                   Each placeholder will be replaced sequentially with the corresponding parameter value.
      * @return A formatted string that includes the logging level and the message with all placeholders replaced by their respective parameter values.
      */
-    private static String formatMessage(String message, Level level, Object... parameters) {
+    private String formatMessage(String message, Level level, Object... parameters) {
 
         AtomicReference<String> messageRef = new AtomicReference<>(message);
 
+        Integer debugMode = Config.get("Log.Debug", 1);
+
+        String showClassName = "";
+        if (Config.get("Log.ShowClassName", 1) == 1) {
+            showClassName = "[" + className + "] - ";
+        }
+
         if (level != Level.CONSOLE) {
             String formattedDate = DataFormat.format(new Date(), DataFormat.REGEX_DATE_LOG_EVENT);
-            messageRef.set(formattedDate + " - [ " + level + " ] - " + messageRef.get());
+            messageRef.set(formattedDate + " - [ " + level + " ] - " + showClassName + messageRef.get());
         }
 
         Arrays.stream(parameters).iterator().forEachRemaining(param -> {

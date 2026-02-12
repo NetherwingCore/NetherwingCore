@@ -1,11 +1,10 @@
 package br.net.dd.netherwingcore.bnetserver.rest.handlers;
 
+import br.net.dd.netherwingcore.common.logging.Log;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
 import java.io.IOException;
-
-import static br.net.dd.netherwingcore.common.logging.Log.log;
 
 /**
  * HandlerIndex is responsible for handling requests to the root endpoint ("/") of the REST API.
@@ -13,19 +12,21 @@ import static br.net.dd.netherwingcore.common.logging.Log.log;
  */
 public class HandlerIndex implements HttpHandler {
 
+    private static final Log logger = Log.getLogger(HandlerIndex.class.getName());
+
     @Override
     public void handle(HttpExchange exchange) throws IOException {
 
-        log("HandlerIndex called");
+        logger.log("HandlerIndex called");
 
         String requestMethod = exchange.getRequestMethod();
         switch (requestMethod) {
             case "GET": {
-                log("Received GET request at /");
+                logger.log("Received GET request at /");
                 break;
             }
             case "POST": {
-                log("Received POST request at /");
+                logger.log("Received POST request at /");
                 break;
             }
             default: {

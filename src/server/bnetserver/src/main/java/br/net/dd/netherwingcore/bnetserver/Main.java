@@ -9,19 +9,20 @@ import br.net.dd.netherwingcore.common.configuration.Config;
 import br.net.dd.netherwingcore.common.logging.Log;
 import br.net.dd.netherwingcore.common.logging.LogFile;
 
-import static br.net.dd.netherwingcore.common.logging.Log.log;
-
 public class Main {
 
     static SocketManager socketManager;
+    static Log logger;
 
     static void main() {
 
+        Config.loadConfig(new BnetConfigSample());
+
+        logger = Log.getLogger(Main.class.getSimpleName());
+
         Banner.show("NetherwingCore BNet Server", "bnetserver.log", "");
 
-        log("Loading configuration...");
-
-        Config.loadConfig(new BnetConfigSample());
+        logger.log("Loading configuration...");
 
         LoginRESTService.start();
         socketManager = new SocketManager();
@@ -30,13 +31,13 @@ public class Main {
                 Config.get("BindIP", "0.0.0.0"),
                 Config.get("BattlenetPort", 1119)
         )) {
-            log("NetherwingCore BNet Server started successfully.");
+            logger.log("NetherwingCore BNet Server started successfully.");
         } else {
-            log("Failed to start NetherwingCore BNet Server.");
+            logger.log("Failed to start NetherwingCore BNet Server.");
             return;
         }
 
-        Log.info("NetherwingCore BNet Server is running", new LogFile("bnetserver.log"));
+        logger.info("NetherwingCore BNet Server is running", new LogFile("bnetserver.log"));
 
 
         // Adds a hook to capture Ctrl+C.
@@ -47,7 +48,7 @@ public class Main {
     public static void stopServices() {
         LoginRESTService.stop();
         socketManager.stop();
-        Log.info("NetherwingCore BNet Server stopped successfully.", new  LogFile("bnetserver.log"));
+        logger.info("NetherwingCore BNet Server stopped successfully.", new  LogFile("bnetserver.log"));
     }
 
 }
