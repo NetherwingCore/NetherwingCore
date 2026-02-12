@@ -2,6 +2,7 @@ package br.net.dd.netherwingcore.common.configuration;
 
 import br.net.dd.netherwingcore.common.configuration.fields.*;
 import br.net.dd.netherwingcore.common.configuration.structs.Item;
+import br.net.dd.netherwingcore.common.logging.Log;
 import br.net.dd.netherwingcore.common.utilities.Util;
 
 import java.io.File;
@@ -12,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static br.net.dd.netherwingcore.common.logging.Log.log;
 import static br.net.dd.netherwingcore.common.serialization.FileManager.*;
 
 /**
@@ -37,6 +37,8 @@ import static br.net.dd.netherwingcore.common.serialization.FileManager.*;
  * from the `FileManager`.
  */
 public class ConfigurationController {
+
+    private static final Log logger = Log.getLogger(ConfigurationController.class.getSimpleName());
 
     /**
      * Holds the configuration object created from the provided {@link ConfigurationSample}.
@@ -65,13 +67,13 @@ public class ConfigurationController {
 
         } else {
 
-            log("The configuration file was not found.");
+            logger.log("The configuration file was not found.");
 
             if (!Files.exists(configurationDistFilePath)) {
                 createFile(configurationSample.getConfiguration(), configurationDistFilePath);
             }
 
-            log("Rename the file " + configurationSample.getFileName() + ".dist to " + configurationSample.getFileName()
+            logger.log("Rename the file " + configurationSample.getFileName() + ".dist to " + configurationSample.getFileName()
                     + " and change the settings according to your project.");
 
         }
@@ -94,7 +96,7 @@ public class ConfigurationController {
      */
     private void loadConfiguration(Path configurationFilePath) {
 
-        log("Loading configuration file: " + configurationFilePath.toString());
+        logger.log("Loading configuration file: " + configurationFilePath.toString());
 
         Map<Key, Value> configurations = read(configurationFilePath);
 
@@ -128,7 +130,7 @@ public class ConfigurationController {
      */
     private void createFile(Configuration configuration, Path configurationFilePath) {
 
-        log("Creating default configuration file: " + configurationFilePath.toFile().getName());
+        logger.log("Creating default configuration file: " + configurationFilePath.toFile().getName());
 
         String line = "#".repeat(100);
 

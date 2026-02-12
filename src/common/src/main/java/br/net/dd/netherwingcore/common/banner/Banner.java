@@ -1,8 +1,7 @@
 package br.net.dd.netherwingcore.common.banner;
 
+import br.net.dd.netherwingcore.common.logging.Log;
 import br.net.dd.netherwingcore.common.utilities.RevisionData;
-
-import static br.net.dd.netherwingcore.common.logging.Log.log;
 
 /**
  * The {@code Banner} class is responsible for displaying a banner message with relevant information
@@ -47,6 +46,8 @@ import static br.net.dd.netherwingcore.common.logging.Log.log;
  */
 public class Banner {
 
+    private static final Log logger = Log.getLogger(Banner.class.getSimpleName());
+
     /**
      * Displays the banner message with the application version, service name, and additional
      * information about logging.
@@ -64,19 +65,19 @@ public class Banner {
      * @param logExtraInfo additional information about logging (currently unused in the method).
      */
     public static void show(String serviceName, String logFileName, String logExtraInfo){
-        log(RevisionData.getFullVersion() + " (" + serviceName + ")");
-        log("(<Ctrl-C> to stop.)");
-        log("");
-        log(" __  __          __    __                                                         ");
-        log("/\\ \\/\\ \\        /\\ \\__/\\ \\                                 __                     ");
-        log("\\ \\ `\\\\ \\     __\\ \\ ,_\\ \\ \\___      __   _ __   __  __  __/\\_\\    ___      __     ");
-        log(" \\ \\ , ` \\  /'__`\\ \\ \\/\\ \\  _ `\\  /'__`\\/\\`'__\\/\\ \\/\\ \\/\\ \\/\\ \\ /' _ `\\  /'_ `\\   ");
-        log("  \\ \\ \\`\\ \\/\\  __/\\ \\ \\_\\ \\ \\ \\ \\/\\  __/\\ \\ \\/ \\ \\ \\_/ \\_/ \\ \\ \\/\\ \\/\\ \\/\\ \\L\\ \\  ");
-        log("   \\ \\_\\ \\_\\ \\____\\\\ \\__\\\\ \\_\\ \\_\\ \\____\\\\ \\_\\  \\ \\___x___/'\\ \\_\\ \\_\\ \\_\\ \\____ \\ ");
-        log("    \\/_/\\/_/\\/____/ \\/__/ \\/_/\\/_/\\/____/ \\/_/   \\/__//__/   \\/_/\\/_/\\/_/\\/___L\\ \\");
-        log("                                                                           /\\____/");
-        log("    https://github.com/NetherwingCore/NetherwingCore                CORE   \\_/__/ ");
-        log("");
+        logger.log(RevisionData.getFullVersion() + " (" + serviceName + ")");
+        logger.log("(<Ctrl-C> to stop.)");
+        logger.log("");
+        logger.log(" __  __          __    __                                                         ");
+        logger.log("/\\ \\/\\ \\        /\\ \\__/\\ \\                                 __                     ");
+        logger.log("\\ \\ `\\\\ \\     __\\ \\ ,_\\ \\ \\___      __   _ __   __  __  __/\\_\\    ___      __     ");
+        logger.log(" \\ \\ , ` \\  /'__`\\ \\ \\/\\ \\  _ `\\  /'__`\\/\\`'__\\/\\ \\/\\ \\/\\ \\/\\ \\ /' _ `\\  /'_ `\\   ");
+        logger.log("  \\ \\ \\`\\ \\/\\  __/\\ \\ \\_\\ \\ \\ \\ \\/\\  __/\\ \\ \\/ \\ \\ \\_/ \\_/ \\ \\ \\/\\ \\/\\ \\/\\ \\L\\ \\  ");
+        logger.log("   \\ \\_\\ \\_\\ \\____\\\\ \\__\\\\ \\_\\ \\_\\ \\____\\\\ \\_\\  \\ \\___x___/'\\ \\_\\ \\_\\ \\_\\ \\____ \\ ");
+        logger.log("    \\/_/\\/_/\\/____/ \\/__/ \\/_/\\/_/\\/____/ \\/_/   \\/__//__/   \\/_/\\/_/\\/_/\\/___L\\ \\");
+        logger.log("                                                                           /\\____/");
+        logger.log("    https://github.com/NetherwingCore/NetherwingCore                CORE   \\_/__/ ");
+        logger.log("");
     }
 
 }

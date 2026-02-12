@@ -3,13 +3,12 @@ package br.net.dd.netherwingcore.common.serialization;
 import br.net.dd.netherwingcore.common.configuration.fields.Key;
 import br.net.dd.netherwingcore.common.configuration.fields.Type;
 import br.net.dd.netherwingcore.common.configuration.fields.Value;
+import br.net.dd.netherwingcore.common.logging.Log;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Map;
-
-import static br.net.dd.netherwingcore.common.logging.Log.log;
 
 /**
  * The FileManager class provides utility methods for reading and writing configuration data
@@ -31,6 +30,8 @@ import static br.net.dd.netherwingcore.common.logging.Log.log;
  * This class is final and cannot be instantiated.
  */
 public class FileManager {
+
+    private static final Log logger = Log.getLogger(FileManager.class.getSimpleName());
 
     /**
      * An object lock to guarantee exclusive write operations to the file.
@@ -68,7 +69,7 @@ public class FileManager {
                 bufferedWriter.close();
 
             } catch (IOException e) {
-                log("An error occurred while writing to the configuration file: " + e.getMessage());
+                logger.log("An error occurred while writing to the configuration file: " + e.getMessage());
             }
         }
     }
@@ -125,7 +126,7 @@ public class FileManager {
 
                 return configurations;
             } catch (Exception e) {
-                log("An error occurred while reading the configuration file: " + e.getMessage());
+                logger.log("An error occurred while reading the configuration file: " + e.getMessage());
                 return null;
             }
         }

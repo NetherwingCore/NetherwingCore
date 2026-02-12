@@ -227,7 +227,7 @@ public class Log {
 
         if (level != Level.CONSOLE) {
             String formattedDate = DataFormat.format(new Date(), DataFormat.REGEX_DATE_LOG_EVENT);
-            messageRef.set(formattedDate + " - [ " + level + " ] - " + showClassName + messageRef.get());
+            messageRef.set(formattedDate + " - [ " + level + " ]" + showClassName + messageRef.get());
         }
 
         Arrays.stream(parameters).iterator().forEachRemaining(param -> {

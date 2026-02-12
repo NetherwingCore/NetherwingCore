@@ -1,5 +1,7 @@
 package br.net.dd.netherwingcore.common.cryptography;
 
+import br.net.dd.netherwingcore.common.logging.Log;
+
 import javax.crypto.*;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
@@ -8,8 +10,6 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
-
-import static br.net.dd.netherwingcore.common.logging.Log.log;
 
 /**
  * Utility class for AES (Advanced Encryption Standard) based cryptography operations.
@@ -25,6 +25,8 @@ import static br.net.dd.netherwingcore.common.logging.Log.log;
  * </p>
  */
 public class AES {
+
+    private static final Log logger = Log.getLogger(AES.class.getSimpleName());
 
     public static final int IV_SIZE_BYTES = 12;
     public static final int KEY_SIZE_BYTES = 16;
@@ -184,11 +186,11 @@ public class AES {
     public boolean process(IV iv, byte[] data, int length, Tag tag) {
         try {
             if (iv.data.length != IV_SIZE_BYTES) {
-                log("AES process error: The IV should be size "+ IV_SIZE_BYTES +", but it's size "+ iv.data.length +".");
+                logger.log("AES process error: The IV should be size "+ IV_SIZE_BYTES +", but it's size "+ iv.data.length +".");
                 return false;
             }
             if (tag.data.length != TAG_SIZE_BYTES) {
-                log("AES process error: The TAG should be size "+ TAG_SIZE_BYTES +", but it's size "+ tag.data.length +".");
+                logger.log("AES process error: The TAG should be size "+ TAG_SIZE_BYTES +", but it's size "+ tag.data.length +".");
                 return false;
             }
 
@@ -217,7 +219,7 @@ public class AES {
 
         } catch (IllegalBlockSizeException | BadPaddingException | InvalidKeyException |
                  InvalidAlgorithmParameterException e) {
-            log("AES process error: " + e.getMessage());
+            logger.log("AES process error: " + e.getMessage());
             return false;
         }
     }
@@ -235,15 +237,15 @@ public class AES {
     public boolean processNoIntegrityCheck(IV iv, byte[] data, int partialLength) {
         try {
             if (encrypting) {
-                log("AES processNoIntegrityCheck error: Integrity check is required when encrypting.");
+                logger.log("AES processNoIntegrityCheck error: Integrity check is required when encrypting.");
                 return false;
             }
             if (iv.data.length != IV_SIZE_BYTES) {
-                log("AES processNoIntegrityCheck error: The IV should be size "+ IV_SIZE_BYTES +", but it's size "+ iv.data.length +".");
+                logger.log("AES processNoIntegrityCheck error: The IV should be size "+ IV_SIZE_BYTES +", but it's size "+ iv.data.length +".");
                 return false;
             }
             if (partialLength > data.length) {
-                log("AES processNoIntegrityCheck error: partialLength exceeds data length.");
+                logger.log("AES processNoIntegrityCheck error: partialLength exceeds data length.");
                 return false;
             }
 
@@ -262,7 +264,7 @@ public class AES {
 
         } catch (NoSuchPaddingException | NoSuchAlgorithmException | InvalidAlgorithmParameterException |
                  InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
-            log("AES processNoIntegrityCheck error: " + e.getMessage());
+            logger.log("AES processNoIntegrityCheck error: " + e.getMessage());
             return  false;
         }
     }
