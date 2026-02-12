@@ -1,14 +1,14 @@
 br.net.dd.netherwingcore
 br.net.dd.netherwingcore.bnetserver
 br.net.dd.netherwingcore.bnetserver.configuration
+br.net.dd.netherwingcore.bnetserver.net
 br.net.dd.netherwingcore.bnetserver.rest
 br.net.dd.netherwingcore.bnetserver.rest.handlers
 br.net.dd.netherwingcore.bnetserver.server
-br.net.dd.netherwingcore.bnetserver.server.session
+br.net.dd.netherwingcore.bnetserver.services
 br.net.dd.netherwingcore.bnetserver.utilities
 br.net.dd.netherwingcore.common
 br.net.dd.netherwingcore.common.banner
-br.net.dd.netherwingcore.common.cache
 br.net.dd.netherwingcore.common.configuration
 br.net.dd.netherwingcore.common.configuration.fields
 br.net.dd.netherwingcore.common.configuration.structs
