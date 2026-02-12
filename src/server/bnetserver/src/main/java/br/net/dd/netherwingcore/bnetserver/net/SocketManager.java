@@ -155,13 +155,6 @@ public class SocketManager {
             SSLEngine sslEngine = sslContext.createSSLEngine();
             sslEngine.setUseClientMode(false);  // SERVER (not client)
             sslEngine.setNeedClientAuth(false); // We can set this to true if we want to require client certificates.
-            sslEngine.setWantClientAuth(false); // We can set this to true if we want to request client certificates but not require them.
-
-            // Enable all supported cipher suites for the SSL engine.
-            sslEngine.setEnabledCipherSuites(sslEngine.getSupportedCipherSuites());
-
-            // Enable all supported protocols for the SSL engine (e.g., TLSv1.2, TLSv1.3).
-            sslEngine.setEnabledProtocols(sslEngine.getSupportedProtocols());
 
             // Create a new session for the accepted connection and register it with the selector.
             Session session = new Session(clientChannel, sslEngine);

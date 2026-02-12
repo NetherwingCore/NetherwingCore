@@ -82,6 +82,7 @@ public class ServiceDispatcher {
     public void dispatch(Session session, int serviceHash, int token, int methodId, MessageBuffer buffer) {
         ServiceMethod method = dispatchers.get(serviceHash);
         if (method != null) {
+            log("Dispatching call to service with hash: 0x" + Integer.toHexString(serviceHash) + " (method ID: " + methodId + ")");
             method.call(session, token, methodId, buffer);
         } else {
             log("No service found for hash: 0x" + Integer.toHexString(serviceHash));
