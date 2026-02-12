@@ -10,10 +10,7 @@ import javax.net.ssl.SSLEngine;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.*;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,6 +44,7 @@ public class SocketManager {
      */
     private void initSSL() throws Exception {
         sslContext = SSLContextImpl.get();
+        Log.info("SSL context initialized successfully");
     }
 
     /**
@@ -65,13 +63,12 @@ public class SocketManager {
             // Open the selector and server socket channel.
             selector = Selector.open();
 
-            serverChannel = ServerSocketChannel.open();
-            serverChannel.configureBlocking(false);
-
             bindIp = bindIp.replace("\"", ""); // Sanitize the bind IP by removing any quotes.
-
             InetSocketAddress socketAddress = new InetSocketAddress(bindIp, port);
 
+            // Configure the server socket channel for non-blocking mode and bind it to the specified address.
+            serverChannel = ServerSocketChannel.open();
+            serverChannel.configureBlocking(false);
             serverChannel.bind(socketAddress);
             serverChannel.register(selector, java.nio.channels.SelectionKey.OP_ACCEPT);
 
@@ -112,6 +109,7 @@ public class SocketManager {
                     keyIterator.remove();
 
                     if (!key.isValid()) {
+                        Log.debug("Selected key is invalid");
                         continue;
                     }
 
@@ -124,7 +122,8 @@ public class SocketManager {
                             handleWrite(key);
                         }
                     } catch (Exception e) {
-                        log("Error handling key: {}"+ e.getMessage());
+                        Log.error("Error handling key: {}", e.getMessage());
+                        e.printStackTrace();
                         closeSession(key);
                     }
                 }
@@ -133,7 +132,7 @@ public class SocketManager {
                 updateSessions();
 
             } catch (IOException e) {
-                log("Error in selector loop: " + e.getMessage());
+                Log.error("Error while reading sessions: " + e.getMessage());
             }
         }
     }
@@ -152,21 +151,29 @@ public class SocketManager {
         if (clientChannel != null) {
             clientChannel.configureBlocking(false);
 
+            Log.info("Accepted connection from " + clientChannel.getRemoteAddress());
+
             // Create an SSL engine for the new connection.
             SSLEngine sslEngine = sslContext.createSSLEngine();
-            sslEngine.setUseClientMode(false);
-            sslEngine.setNeedClientAuth(false);
+            sslEngine.setUseClientMode(false);  // SERVER (not client)
+            sslEngine.setNeedClientAuth(false); // We can set this to true if we want to require client certificates.
+            sslEngine.setWantClientAuth(false); // We can set this to true if we want to request client certificates but not require them.
+
+            // Enable all supported cipher suites for the SSL engine.
+            sslEngine.setEnabledCipherSuites(sslEngine.getSupportedCipherSuites());
+
+            // Enable all supported protocols for the SSL engine (e.g., TLSv1.2, TLSv1.3).
+            sslEngine.setEnabledProtocols(sslEngine.getSupportedProtocols());
 
             // Create a new session for the accepted connection and register it with the selector.
             Session session = new Session(clientChannel, sslEngine);
             sessions.put(clientChannel, session);
 
             // Register the client channel for read operations.
-            clientChannel.register(selector, SelectionKey.OP_READ, session);
+            clientChannel.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE, session);
 
             session.start();
 
-            log("Accepted connection from " + clientChannel.getRemoteAddress());
         }
     }
 
@@ -183,7 +190,8 @@ public class SocketManager {
         Session session = sessions.get(channel);
 
         if (session == null) {
-            log("No session found for channel: " + channel.getRemoteAddress());
+            Log.warn("No session found for channel: {}", String.valueOf(channel.getRemoteAddress()));
+            closeSession(key);
             return;
         }
 
@@ -192,6 +200,7 @@ public class SocketManager {
 
         if (bytesRead == -1) {
             // Client has closed the connection.
+            Log.debug("{} Client disconnected", session.getClientInfo());
             closeSession(key);
             return;
         }
@@ -202,13 +211,23 @@ public class SocketManager {
 
             if (result == SocketReadCallbackResult.STOP){
                 closeSession(key);
+                return;
             }
         }
 
-        if (!session.processWriteQueue()) {
-            // If there are pending writes, register for write events.
-            key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+        try {
+
+            if (session.hasDataToWrite()) {
+                key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+            } else {
+                key.interestOps(SelectionKey.OP_READ);
+            }
+
+        } catch (CancelledKeyException e) {
+            Log.warn("Selection key was cancelled while processing read: {}", e.getMessage());
+            closeSession(key);
         }
+
     }
 
     /**
@@ -228,9 +247,16 @@ public class SocketManager {
             return;
         }
 
-        if (session.processWriteQueue()) {
-            // If all writes are processed, switch back to read-only mode.
-            key.interestOps(SelectionKey.OP_READ);
+        try {
+
+            boolean allWritten = session.processWriteQueue();
+            if (allWritten && !session.hasDataToWrite()) {
+                key.interestOps(SelectionKey.OP_READ);
+            }
+
+        } catch (IOException e) {
+            Log.error("Error during write operation: {}", e.getMessage());
+            closeSession(key);
         }
     }
 
@@ -251,14 +277,19 @@ public class SocketManager {
      * @param key the selection key representing the session to close
      */
     private void closeSession(SelectionKey key) {
-        SocketChannel channel = (SocketChannel) key.channel();
-        Session session = sessions.remove(channel);
+        try {
+            SocketChannel channel = (SocketChannel) key.channel();
+            Session session = sessions.remove(channel);
 
-        if (session != null) {
-            session.closeSocket();
+            if (session != null) {
+                session.closeSocket();
+            }
+
+            key.cancel();
+            channel.close();
+        } catch (IOException e) {
+            Log.error("Error closing session: {}", e.getMessage());
         }
-
-        key.cancel();
     }
 
     /**
@@ -274,12 +305,15 @@ public class SocketManager {
         sessions.clear();
 
         try {
-            if (serverChannel != null) {
-                serverChannel.close();
-            }
+
             if (selector != null) {
                 selector.close();
             }
+
+            if (serverChannel != null) {
+                serverChannel.close();
+            }
+
         } catch (IOException e) {
             Log.error("Error closing server: {}", e.getMessage());
         }

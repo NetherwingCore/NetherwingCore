@@ -37,31 +37,20 @@ public class Session {
     // Buffer for accumulating data read from the socket.
     private final MessageBuffer readBuffer;
 
-    // Buffers for SSL encryption/decryption (if needed).
-    private final ByteBuffer sslNetBuffer;      // Encrypted data read from the socket
-    private ByteBuffer sslAppBuffer;      // Decrypted application data
-    private final ByteBuffer sslOutNetBuffer;   // Data to send (encrypted)
-    private final ByteBuffer sslOutAppBuffer;   // Data to send (decrypted)
+    // SSL Buffers - IMPORTANT: Manage position correctly
+    private final ByteBuffer peerNetData;   // Encrypted data received from the network
+    private ByteBuffer peerAppData;         // Decrypted data from the application
+    private ByteBuffer myNetData;           // Encrypted data to send
+    private final ByteBuffer myAppData;     // Application data to encrypt
 
     // Queue for outgoing messages to be written to the socket.
     private final ConcurrentLinkedQueue<MessageBuffer> writeQueue;
 
     // Authentication state and account information.
     private volatile boolean authenticated;
-    private volatile HandshakeState handshakeState;
+    private volatile boolean handshakeComplete;
     private String accountName;
     private int accountId;
-
-    /** Enum to represent the state of the SSL handshake process. This can be used to track the progress of the handshake
-     * and handle different stages accordingly. For example, you might want to log different messages or take specific
-     * actions based on whether the handshake is in progress, completed, or failed.
-     */
-    private enum HandshakeState {
-        NOT_STARTED,
-        IN_PROGRESS,
-        COMPLETED,
-        FAILED
-    }
 
     /**
      * Constructs a new Session for a given SocketChannel and SSLEngine.
@@ -84,13 +73,14 @@ public class Session {
         int appBufferSize = sslEngine.getSession().getApplicationBufferSize();
 
         // These buffers will be used for SSL handshakes and encryption/decryption.
-        this.sslNetBuffer = ByteBuffer.allocate(netBufferSize);
-        this.sslAppBuffer = ByteBuffer.allocate(appBufferSize);
-        this.sslOutNetBuffer = ByteBuffer.allocate(netBufferSize);
-        this.sslOutAppBuffer = ByteBuffer.allocate(appBufferSize);
+        this.peerNetData = ByteBuffer.allocate(netBufferSize);
+        this.peerAppData = ByteBuffer.allocate(appBufferSize);
+        this.myNetData = ByteBuffer.allocate(netBufferSize);
+        this.myAppData = ByteBuffer.allocate(appBufferSize);
 
         this.writeQueue = new ConcurrentLinkedQueue<>();
         this.authenticated = false;
+        this.handshakeComplete = false;
 
         log("New session created for " + getClientInfo());
     }
@@ -101,51 +91,61 @@ public class Session {
      */
     public void start() {
 
+        Log.debug("{} Starting SSL handshake", getClientInfo());
+
         try {
             // Starts the SSL handshake process.
             sslEngine.beginHandshake();
-            handshakeState = HandshakeState.IN_PROGRESS;
 
-            // Performs the handshake steps, which may involve multiple rounds of communication with the client.
-            performHandshakeWrap();
+            Log.debug("{} Handshake status: {}",
+                    getClientInfo(), String.valueOf(sslEngine.getHandshakeStatus()));
 
         } catch (IOException e) {
-            Log.error("{} Failed to start SSL handshake: {}", getClientInfo(), e.getMessage());
-            handshakeState = HandshakeState.FAILED;
+            Log.error("{} Failed to start SSL handshake: {}",
+                    getClientInfo(), e.getMessage());
             closeSocket();
         }
 
     }
 
     /**
-     * Performs the SSL handshake wrap step, which involves generating handshake data to send to the client.
-     * This method will call sslEngine.wrap() to create the necessary handshake messages and write them to the socket.
-     * If the handshake is completed successfully, it will update the handshake state accordingly.
+     * Handles the SSL handshake wrapping process. This method will attempt to wrap application data for the handshake and send it to the client.
+     * It will manage the handshake status and handle any necessary buffer resizing if the buffers are too small to hold the data.
+     * If there is an error during the wrapping process, it will log the error and close the socket.
      *
-     * @throws IOException If there is an error during the SSL handshake process, such as writing to the socket.
+     * @throws IOException If there is an error during the wrapping process, such as issues with writing to the socket or SSL exceptions.
      */
-    private void performHandshakeWrap() throws IOException {
+    private void doHandshakeWrap() throws IOException {
+        myNetData.clear();
 
-        sslOutAppBuffer.clear();
-        sslOutNetBuffer.clear();
+        SSLEngineResult result = sslEngine.wrap(myAppData, myNetData);
 
-        SSLEngineResult wrapResult = sslEngine.wrap(sslOutAppBuffer, sslOutNetBuffer);
+        switch (result.getStatus()) {
+            case OK:
+                myNetData.flip();
+                while (myNetData.hasRemaining()) {
+                    socketChannel.write(myNetData);
+                }
+                Log.debug("{} Handshake WRAP: produced {} bytes",
+                        getClientInfo(), String.valueOf(result.bytesProduced()));
+                break;
 
-        if (wrapResult.bytesProduced() > 0) {
-            sslOutNetBuffer.flip();
+            case BUFFER_OVERFLOW:
+                myNetData = enlargeBuffer(myNetData, sslEngine.getSession().getPacketBufferSize());
+                doHandshakeWrap();
+                break;
 
-            while (sslOutNetBuffer.hasRemaining()) {
-                socketChannel.write(sslOutNetBuffer);
-            }
-
-            Log.debug("{} Sent {} bytes during handshake", getClientInfo(), String.valueOf(wrapResult.bytesProduced()));
+            case BUFFER_UNDERFLOW:
+            case CLOSED:
+                Log.error("{} Handshake WRAP failed: {}",
+                        getClientInfo(), String.valueOf(result.getStatus()));
+                throw new SSLException("Unexpected status during wrap: " + result.getStatus());
         }
 
-        if (wrapResult.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.FINISHED) {
-            handshakeState = HandshakeState.COMPLETED;
-            Log.info("{} SSL Handshake completed", getClientInfo());
-        }
-
+        // After wrapping, we need to check if there are any tasks that need to be run as part of the handshake process.
+        // The SSLEngine may require certain tasks to be executed in order to complete the handshake, such as generating keys or performing cryptographic operations.
+        // We will call the runHandshakeTasks method to execute any pending tasks before proceeding with the next steps of the handshake.
+        runHandshakeTasks();
     }
 
     /**
@@ -157,16 +157,12 @@ public class Session {
      */
     public int readFromSocket(ByteBuffer tempBuffer) throws IOException {
 
-        // If the handshake is still in progress, we need to handle SSL decryption.
-        if (handshakeState == HandshakeState.FAILED) {
-            return -1;
-        }
-
         // Reads raw data from the socket into the temporary buffer.
-        int bytesRead = socketChannel.read(sslNetBuffer);
+        int bytesRead = socketChannel.read(peerNetData);
 
         if (bytesRead == -1) {
             Log.debug("{} Connection closed by client", getClientInfo());
+            closeSocket();
             return -1;
         }
 
@@ -176,98 +172,85 @@ public class Session {
 
         Log.debug("{} Read {} bytes from socket", getClientInfo(), String.valueOf(bytesRead));
 
-        if (handshakeState == HandshakeState.IN_PROGRESS) {
-            processHandshake();
-            return bytesRead;
-        }
-
-        if (handshakeState == HandshakeState.COMPLETED) {
-            unwrapApplicationData();
+        if (!handshakeComplete) {
+            doHandshake();
+        } else {
+            unwrapData();
         }
 
         return bytesRead;
     }
 
     /**
-     * Processes the SSL handshake by unwrapping incoming handshake data and handling the different stages of the handshake process.
-     * This method will continue to unwrap data until the handshake is completed or if there is an error. It will also handle any
-     * necessary tasks that need to be run during the handshake, such as delegated tasks from the SSLEngine.
+     * Performs the SSL handshake process by handling the necessary steps to establish a secure connection with the client.
+     * This method will manage the handshake status and perform the required actions based on the current state of the handshake.
+     * It will handle both wrapping and unwrapping of data as needed during the handshake process. If the handshake is successful,
+     * it will set the handshakeComplete flag to true. If there is an error during the handshake, it will log the error and close the socket.
      *
-     * @throws IOException If there is an error during the SSL handshake process, such as issues with unwrapping or writing to the socket.
+     * @throws IOException If there is an error during the handshake process, such as issues with reading/writing to the socket or SSL exceptions.
      */
-    private void processHandshake() throws IOException {
-        sslNetBuffer.flip();
+    private void doHandshake() throws IOException {
+        peerNetData.flip(); // Prepares the buffer for reading.
 
-        // We need to unwrap the incoming handshake data until we have processed all of it or until the handshake is completed.
-        while (sslNetBuffer.hasRemaining() && handshakeState == HandshakeState.IN_PROGRESS) {
-            sslAppBuffer.clear();
+        SSLEngineResult result;
+        SSLEngineResult.HandshakeStatus handshakeStatus = sslEngine.getHandshakeStatus();
 
-            SSLEngineResult unwrapResult = sslEngine.unwrap(sslAppBuffer, sslNetBuffer);
-
-            Log.debug("{} Handshake unwrap: status={}, handshakeStatus={}, bytesConsumed={}, bytesProduced={}",
-                    getClientInfo(),
-                    String.valueOf(unwrapResult.getStatus()),
-                    String.valueOf(unwrapResult.getHandshakeStatus()),
-                    String.valueOf(unwrapResult.bytesConsumed()),
-                    String.valueOf(unwrapResult.bytesProduced()));
-
-            // After unwrapping, we need to check the result status to determine the next steps in the handshake process.
-            switch (unwrapResult.getStatus()) {
-                case OK:
-                    // If the handshake is finished, we can proceed to the next steps.
-                    break;
-
-                case BUFFER_UNDERFLOW:
-                    // Need more data, break to read more from the socket.
-                    sslNetBuffer.compact();
-                    return;
-
-                case BUFFER_OVERFLOW:
-                    // This should not happen during handshake unwrap, but if it does, we need to resize the application buffer.
-                    int appSize = sslEngine.getSession().getApplicationBufferSize();
-                    sslAppBuffer = ByteBuffer.allocate(appSize);
-                    break;
-
-                case CLOSED:
-                    Log.warn("{} SSL closed during handshake", getClientInfo());
-                    handshakeState = HandshakeState.FAILED;
-                    return;
-            }
-
-            // After processing the unwrap result, we need to check the handshake status to determine if we need to run any delegated tasks or if the handshake is completed.
-            SSLEngineResult.HandshakeStatus handshakeStatus = unwrapResult.getHandshakeStatus();
+        while (handshakeStatus != SSLEngineResult.HandshakeStatus.FINISHED &&
+                handshakeStatus != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
 
             switch (handshakeStatus) {
-                case NEED_TASK:
-                    // If the handshake status indicates that we need to run delegated tasks, we will execute those tasks before continuing with the handshake process.
-                    // This is necessary because the SSLEngine may require certain tasks to be performed in order to complete the handshake, such as generating keys or performing cryptographic operations.
-                    runDelegatedTasks();
+                case NEED_UNWRAP:
+                    result = sslEngine.unwrap(peerNetData, peerAppData);
+                    handshakeStatus = result.getHandshakeStatus();
+
+                    Log.debug("{} Handshake UNWRAP: status={}, handshakeStatus={}",
+                            getClientInfo(), String.valueOf(result.getStatus()), String.valueOf(handshakeStatus));
+
+                    switch (result.getStatus()) {
+                        case OK:
+                            break;
+
+                        case BUFFER_OVERFLOW:
+                            peerAppData = enlargeBuffer(peerAppData,
+                                    sslEngine.getSession().getApplicationBufferSize());
+                            break;
+
+                        case BUFFER_UNDERFLOW:
+                            // Need more data - compress and return
+                            peerNetData.compact();
+                            return;
+
+                        case CLOSED:
+                            Log.warn("{} SSL closed during handshake", getClientInfo());
+                            closeSocket();
+                            return;
+                    }
                     break;
 
                 case NEED_WRAP:
-                    // If the handshake status indicates that we need to wrap data to send to the client, we will call the performHandshakeWrap method to generate the necessary handshake messages and send them to the client.
-                    sslNetBuffer.compact();
-                    performHandshakeWrap();
-                    sslNetBuffer.clear();
+                    peerNetData.compact();
+                    doHandshakeWrap();
+                    peerNetData.clear();
+                    handshakeStatus = sslEngine.getHandshakeStatus();
                     break;
 
-                case NEED_UNWRAP:
-                    // Continue unwrapping in the next iteration.
+                case NEED_TASK:
+                    runHandshakeTasks();
+                    handshakeStatus = sslEngine.getHandshakeStatus();
                     break;
 
                 case FINISHED:
-                    handshakeState = HandshakeState.COMPLETED;
-                    Log.info("{} SSL Handshake completed", getClientInfo());
-                    break;
-
                 case NOT_HANDSHAKING:
-                    handshakeState = HandshakeState.COMPLETED;
-                    Log.info("{} SSL Handshake completed (NOT_HANDSHAKING)", getClientInfo());
-                    break;
-
+                    handshakeComplete = true;
+                    Log.info("{} SSL handshake completed successfully", getClientInfo());
+                    peerNetData.compact();
+                    return;
             }
         }
-        sslNetBuffer.compact();
+
+        handshakeComplete = true;
+        Log.info("{} SSL handshake finished", getClientInfo());
+        peerNetData.compact();
     }
 
     /**
@@ -275,7 +258,7 @@ public class Session {
      * require certain tasks to be executed in order to complete the handshake. This method will check for any pending
      * tasks and execute them accordingly.
      */
-    private void runDelegatedTasks() {
+    private void runHandshakeTasks() {
         Runnable task;
         while ((task = sslEngine.getDelegatedTask()) != null) {
             task.run();
@@ -283,49 +266,65 @@ public class Session {
     }
 
     /**
-     * Unwraps application data from the SSL engine. This method is called after the SSL handshake is completed and is responsible for
-     * decrypting incoming data from the client. It will read encrypted data from the sslNetBuffer, unwrap it using the sslEngine,
-     * and store the decrypted application data in the readBuffer for further processing by the read handler.
+     * Unwraps (decrypts) data received from the peer. This method processes the encrypted data in the peerNetData buffer,
+     * decrypts it using the SSLEngine, and stores the decrypted data in the readBuffer for further processing.
      *
-     * @throws IOException If there is an error during the unwrapping process, such as issues with buffer sizes or SSL exceptions.
+     * @throws IOException If there is an error during the unwrapping process, such as SSL exceptions.
      */
-    private void unwrapApplicationData() throws IOException {
-        sslNetBuffer.flip();
+    private void unwrapData() throws IOException {
+        peerNetData.flip();
 
-        SSLEngineResult unwrapResult = sslEngine.unwrap(sslAppBuffer, sslNetBuffer);
+        while (peerNetData.hasRemaining()) {
+            peerAppData.clear();
 
-        switch (unwrapResult.getStatus()) {
-            case OK:
-                // If the unwrap was successful, we need to flip the sslAppBuffer to prepare it for reading and then copy the decrypted data into the readBuffer for processing by the read handler.
-                sslAppBuffer.flip();
-                if (sslAppBuffer.hasRemaining()) {
-                    byte[] data = new byte[sslAppBuffer.remaining()];
-                    sslAppBuffer.get(data);
-                    readBuffer.write(data);
+            SSLEngineResult result = sslEngine.unwrap(peerNetData, peerAppData);
 
-                    Log.debug("{} Decrypted {} bytes", getClientInfo(), String.valueOf(data.length));
-                }
-                break;
+            switch (result.getStatus()) {
+                case OK:
+                    peerAppData.flip();
+                    if (peerAppData.hasRemaining()) {
+                        byte[] data = new byte[peerAppData.remaining()];
+                        peerAppData.get(data);
+                        readBuffer.write(data);
 
-            case BUFFER_OVERFLOW:
-                // This means our application buffer is too small to hold the decrypted data. We need to resize it based on the session's requirements.
-                int appSize = sslEngine.getSession().getApplicationBufferSize();
-                ByteBuffer newAppBuffer = ByteBuffer.allocate(appSize + sslAppBuffer.position());
-                sslAppBuffer.flip();
-                newAppBuffer.put(sslAppBuffer);
-                sslAppBuffer = newAppBuffer;
-                break;
+                        Log.debug("{} Decrypted {} bytes",
+                                getClientInfo(), String.valueOf(data.length));
+                    }
+                    break;
 
-            case BUFFER_UNDERFLOW:
-                // Need more data, break to read more from the socket.
-                sslNetBuffer.compact();
-                break;
+                case BUFFER_OVERFLOW:
+                    peerAppData = enlargeBuffer(peerAppData,
+                            sslEngine.getSession().getApplicationBufferSize());
+                    break;
 
-            case CLOSED:
-                Log.warn("{} SSL closed during data unwrap", getClientInfo());
-                closeSocket();
-                break;
+                case BUFFER_UNDERFLOW:
+                    peerNetData.compact();  // Compact and await more data.
+                    return;                 // Need more data to continue unwrapping.
+
+                case CLOSED:
+                    Log.debug("{} SSL connection closed", getClientInfo());
+                    closeSocket();
+                    return;
+            }
         }
+
+        peerNetData.compact();
+    }
+
+    /**
+     * Helper method to enlarge a ByteBuffer when it is too small to hold incoming data. This method will create a new ByteBuffer with a larger capacity,
+     * copy the existing data from the old buffer to the new buffer, and return the new buffer. The new size will be either double the current capacity or the minimum required size, whichever is larger.
+     *
+     * @param buffer  The original ByteBuffer that needs to be enlarged.
+     * @param minSize The minimum required size for the new buffer.
+     * @return A new ByteBuffer with increased capacity containing the data from the original buffer.
+     */
+    private ByteBuffer enlargeBuffer(ByteBuffer buffer, int minSize) {
+        int newSize = Math.max(buffer.capacity() * 2, minSize);
+        ByteBuffer newBuffer = ByteBuffer.allocate(newSize);
+        buffer.flip();
+        newBuffer.put(buffer);
+        return newBuffer;
     }
 
     /**
@@ -335,6 +334,11 @@ public class Session {
      * @return A SocketReadCallbackResult indicating whether to keep reading or stop processing.
      */
     public SocketReadCallbackResult readHandler() {
+
+        if (!handshakeComplete) {
+            return SocketReadCallbackResult.KEEP_READING;
+        }
+
         while (readBuffer.getActiveSize() > 0) {
 
             // STEP 1: Read 2 bytes with the header size.
@@ -382,6 +386,7 @@ public class Session {
         Log.debug("{} Header length: {}", getClientInfo(), String.valueOf(headerLength));
 
         headerBuffer.resize(headerLength);
+        headerLengthBuffer.readCompleted(2);
         return true;
     }
 
@@ -417,12 +422,12 @@ public class Session {
             // Reparses the header
             Header header = Header.parseFrom(headerBuffer.toArray());
 
-            Log.debug("{} received request service_hash={} method_id={} token={} size={}",
-                     getClientInfo(),
-                     String.valueOf(header.getServiceHash()),
-                     String.valueOf(header.getMethodId()),
-                     String.valueOf(header.getToken()),
-                     String.valueOf(header.getSize()));
+            Log.debug("{} Request: service=0x{}, method={}, token={}, size={}",
+                    getClientInfo(),
+                    Integer.toHexString(header.getServiceHash()).toUpperCase(),
+                    String.valueOf(header.getMethodId()),
+                    String.valueOf(header.getToken()),
+                    String.valueOf(header.getSize()));
 
             // Dispatch to the correct service.
             serviceDispatcher.dispatch(
@@ -474,7 +479,7 @@ public class Session {
             return Optional.of(SocketReadCallbackResult.STOP);
         }
 
-        return Optional.empty(); // Vai para próximo buffer
+        return Optional.empty(); // Go to the next buffer.
     }
 
     /**
@@ -543,39 +548,61 @@ public class Session {
      */
     public boolean processWriteQueue() throws IOException {
 
-        if (handshakeState == HandshakeState.COMPLETED) {
-            return true; // No need to write anything if handshake is completed and there are no responses to send.
+        // If the handshake didn't complete, process it first.
+        if (!handshakeComplete) {
+
+            SSLEngineResult.HandshakeStatus hsStatus = sslEngine.getHandshakeStatus();
+
+            if (hsStatus == SSLEngineResult.HandshakeStatus.NEED_WRAP) {
+                Log.debug("{} Handshake needs WRAP", getClientInfo());
+                doHandshakeWrap();
+                return false; // Keep trying
+            }
+
+            // If we are still in the handshake process but don't need to wrap, we can't send application data yet.
+            return true;
         }
 
+        // Process the write queue, attempting to write each packet to the socket.
+        // If a packet cannot be fully written, it will remain in the queue for the next attempt.
         while (!writeQueue.isEmpty()) {
             MessageBuffer packet = writeQueue.peek();
 
-            sslOutAppBuffer.clear();
-            sslOutAppBuffer.put(packet.toArray());
-            sslOutAppBuffer.flip();
+            // Prepares the packet for encryption.
+            // We need to copy the data from the MessageBuffer to the myAppData ByteBuffer, which is used for SSL encryption.
+            // We also need to manage the position and limit of the ByteBuffer correctly to ensure that the SSL engine can read the data properly.
+            myAppData.clear();
+            myAppData.put(packet.toArray());
+            myAppData.flip();
 
-            sslOutNetBuffer.clear();
-            SSLEngineResult wrapResult = sslEngine.wrap(sslOutAppBuffer, sslOutNetBuffer);
+            // Encrypts the data using the SSLEngine.
+            // The encrypted data will be stored in the myNetData ByteBuffer, which is used for writing to the socket.
+            myNetData.clear();
+            SSLEngineResult wrapResult = sslEngine.wrap(myAppData, myNetData);
 
             if (wrapResult.getStatus() != SSLEngineResult.Status.OK) {
+                if (wrapResult.getStatus() == SSLEngineResult.Status.BUFFER_OVERFLOW) {
+                    myNetData = enlargeBuffer(myNetData,
+                            sslEngine.getSession().getPacketBufferSize());
+                    continue;
+                }
                 Log.error("{} Failed to encrypt packet: {}",
                         getClientInfo(), String.valueOf(wrapResult.getStatus()));
                 return false;
             }
 
-            sslOutNetBuffer.flip();
+            // Prepares the encrypted data for writing to the socket.
+            myNetData.flip();
 
-            int totalWritten = 0;
-            while (sslOutNetBuffer.hasRemaining()) {
-                int bytesWritten = socketChannel.write(sslOutNetBuffer);
+            while (myNetData.hasRemaining()) {
+                int bytesWritten = socketChannel.write(myNetData);
                 if (bytesWritten == 0) {
-                    return false;
+                    return false; // Socket buffer full, try again later.
                 }
-                totalWritten += bytesWritten;
             }
 
-            Log.debug("{} Sent encrypted packet: {} bytes",
-                    getClientInfo(), String.valueOf(totalWritten));
+            Log.debug("{} Sent packet: {} bytes encrypted ",
+                    getClientInfo(), String.valueOf(wrapResult.bytesProduced()));
 
             writeQueue.poll();
 
@@ -585,18 +612,29 @@ public class Session {
     }
 
     /**
+     * Checks if there is data in the write queue that needs to be sent to the client, or if the SSL handshake is still in progress.
+     *
+     * @return true if there is data to write or if the handshake is not complete, false otherwise.
+     */
+    public boolean hasDataToWrite() {
+        return !writeQueue.isEmpty() || !handshakeComplete;
+    }
+
+    /**
      * Closes the socket channel associated with this session and logs the closure. If there is an error while closing,
      * it will be logged as well.
      */
     public void closeSocket() {
+        String clientInfo = getClientInfo();
+        Log.info("{} Closing socket", clientInfo);
         try {
-            if (sslEngine != null && !sslEngine.isOutboundDone()) {
+            if (!sslEngine.isOutboundDone()) {
                 sslEngine.closeOutbound();
             }
             socketChannel.close();
-            Log.info("{} Session closed", getClientInfo());
+            Log.info("{} Session closed", clientInfo);
         } catch (IOException e) {
-            Log.error("{} Error closing socket: {}", getClientInfo(), e.getMessage());
+            Log.error("{} Error closing socket: {}", clientInfo, e.getMessage());
         }
     }
 
