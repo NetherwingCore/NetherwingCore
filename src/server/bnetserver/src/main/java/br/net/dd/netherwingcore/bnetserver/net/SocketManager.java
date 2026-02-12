@@ -7,6 +7,7 @@ import br.net.dd.netherwingcore.shared.networking.SocketReadCallbackResult;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -149,12 +150,26 @@ public class SocketManager {
         if (clientChannel != null) {
             clientChannel.configureBlocking(false);
 
+            // Configure socket options for better performance and reliability.
+            clientChannel.socket().setKeepAlive(true);
+            clientChannel.socket().setTcpNoDelay(true); // Disable Nagle's algorithm for lower latency.
+            clientChannel.socket().setSoTimeout(0);     // No timeout, we will handle idle connections ourselves.
+
             Log.info("Accepted connection from " + clientChannel.getRemoteAddress());
 
             // Create an SSL engine for the new connection.
             SSLEngine sslEngine = sslContext.createSSLEngine();
             sslEngine.setUseClientMode(false);  // SERVER (not client)
             sslEngine.setNeedClientAuth(false); // We can set this to true if we want to require client certificates.
+            sslEngine.setWantClientAuth(false); // We can set this to true if we want to request client certificates but not require them.
+
+            // Disable hostname verification since we're not using client certificates and this is a server-side SSL engine.
+            SSLParameters sslParams = sslEngine.getSSLParameters();
+            sslParams.setEndpointIdentificationAlgorithm(null);
+            sslEngine.setSSLParameters(sslParams);
+
+            // Enable only secure TLS protocols (TLSv1.2 and TLSv1.3) and disable older, less secure versions.
+            sslEngine.setEnabledProtocols(new String[]{"TLSv1.2", "TLSv1.3"});
 
             // Create a new session for the accepted connection and register it with the selector.
             Session session = new Session(clientChannel, sslEngine);
@@ -169,53 +184,62 @@ public class SocketManager {
     }
 
     /**
-     * Handles reading data from a client socket, processing it through the session,
-     * and managing the session's state based on the read results.
+     * Handles reading data from a client socket, processing it through the session's
+     * read handler, and managing the selection key's interest ops based on whether
+     * there is more data to write.
      *
      * @param key        the selection key representing the read event
      * @param tempBuffer a temporary buffer for reading data from the socket
      * @throws IOException if there is an error reading from the socket or processing the session
      */
     private void handleRead(SelectionKey key, ByteBuffer tempBuffer) throws IOException {
+
         SocketChannel channel = (SocketChannel) key.channel();
         Session session = sessions.get(channel);
 
         if (session == null) {
-            Log.warn("No session found for channel: {}", String.valueOf(channel.getRemoteAddress()));
+            Log.warn("Session not found for channel");
             closeSession(key);
             return;
-        }
-
-        tempBuffer.clear();
-        int bytesRead = session.readFromSocket(tempBuffer);
-
-        if (bytesRead == -1) {
-            // Client has closed the connection.
-            Log.debug("{} Client disconnected", session.getClientInfo());
-            closeSession(key);
-            return;
-        }
-
-        if (bytesRead > 0) {
-            // Process the read data and invoke the session's read handler.
-            SocketReadCallbackResult result = session.readHandler();
-
-            if (result == SocketReadCallbackResult.STOP){
-                closeSession(key);
-                return;
-            }
         }
 
         try {
+            tempBuffer.clear();
+            int bytesRead = session.readFromSocket(tempBuffer);
 
-            if (session.hasDataToWrite()) {
-                key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-            } else {
-                key.interestOps(SelectionKey.OP_READ);
+            if (bytesRead == -1) {
+                // Customer disconnected
+                Log.debug("{} Client disconnected", session.getClientInfo());
+                closeSession(key);
+                return;
             }
 
-        } catch (CancelledKeyException e) {
-            Log.warn("Selection key was cancelled while processing read: {}", e.getMessage());
+            if (bytesRead > 0) {
+                // Processes received data.
+                SocketReadCallbackResult result = session.readHandler();
+
+                if (result == SocketReadCallbackResult.STOP) {
+                    closeSession(key);
+                    return;
+                }
+            }
+
+            // If there is data in the write queue, register interest in WRITE.
+            try {
+                if (session.hasDataToWrite()) {
+                    key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+                } else {
+                    key.interestOps(SelectionKey.OP_READ);
+                }
+            } catch (CancelledKeyException e) {
+                // Key was canceled, session closed.
+                Log.debug("{} Key cancelled, closing session", session.getClientInfo());
+                closeSession(key);
+            }
+
+        } catch (IOException e) {
+            Log.error("{} IOException during read: {}",
+                    session.getClientInfo(), e.getMessage());
             closeSession(key);
         }
 
@@ -252,13 +276,26 @@ public class SocketManager {
     }
 
     /**
-     * Periodically updates the sessions, removing any that are no longer open.
-     * This method can be expanded to include additional session management tasks
-     * such as handling timeouts or performing cleanup.
+     * Updates the sessions by checking for idle timeouts and closed connections,
+     * removing any sessions that are no longer active.
      */
     private void updateSessions() {
-        // Remove any sessions that are no longer open.
-        sessions.values().removeIf(session -> !session.isOpen());
+        long idleTimeout = 120000; // 2 minutos
+
+        sessions.values().removeIf(session -> {
+            if (!session.isOpen()) {
+                Log.debug("{} Session closed, removing", session.getClientInfo());
+                return true;
+            }
+
+            if (session.isIdle(idleTimeout)) {
+                Log.info("{} Session idle for too long, closing", session.getClientInfo());
+                session.closeSocket();
+                return true;
+            }
+
+            return false;
+        });
     }
 
     /**

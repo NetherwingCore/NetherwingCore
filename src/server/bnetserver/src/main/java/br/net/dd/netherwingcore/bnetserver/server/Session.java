@@ -49,6 +49,7 @@ public class Session {
     // Authentication state and account information.
     private volatile boolean authenticated;
     private volatile boolean initialHandshakeDone;
+    private volatile long lastActivityTime;
     private String accountName;
     private int accountId;
 
@@ -82,6 +83,8 @@ public class Session {
         this.authenticated = false;
         this.initialHandshakeDone = false;
 
+        this.lastActivityTime = System.currentTimeMillis();
+
         log("New session created for " + getClientInfo());
     }
 
@@ -109,14 +112,32 @@ public class Session {
     }
 
     /**
-     * Reads data from the socket, processes SSL decryption, and handles the incoming data according to the current state of the session.
-     * This method is called when the socket is ready for reading. It will read encrypted data from the network, unwrap it using the SSLEngine,
-     * and store the decrypted application data in the readBuffer for further processing. It also manages SSL handshake states and handles any necessary
-     * buffer resizing if the decrypted data exceeds the current buffer sizes.
+     * Updates the last activity time for this session. This method should be called whenever there is activity on the session (e.g., reading or writing data)
+     * to ensure that the session's idle timeout can be accurately determined.
+     */
+    private void updateActivity() {
+        this.lastActivityTime = System.currentTimeMillis();
+    }
+
+    /**
+     * Checks if the session has been idle for longer than the specified timeout. This method compares the current time with the last recorded activity time
+     * to determine if the session should be considered idle and potentially closed due to inactivity.
+     *
+     * @param timeoutMillis The idle timeout in milliseconds.
+     * @return true if the session has been idle for longer than the specified timeout, false otherwise.
+     */
+    public boolean isIdle(long timeoutMillis) {
+        return (System.currentTimeMillis() - lastActivityTime) > timeoutMillis;
+    }
+
+    /**
+     * Reads data from the socket and processes it through the SSL engine. This method handles reading encrypted data from the network,
+     * decrypting it using the SSLEngine, and storing the decrypted application data in the read buffer for further processing.
+     * It also manages the SSL handshake state and handles any SSL exceptions that may occur during the unwrap process.
      *
      * @param tempBuffer A temporary ByteBuffer used for reading data from the socket.
-     * @return The number of bytes read from the socket, or -1 if the end of stream is reached or if an error occurs.
-     * @throws IOException If an I/O error occurs while reading from the socket or during SSL processing.
+     * @return The number of bytes read from the socket, or -1 if the connection was closed by the client.
+     * @throws IOException If an I/O error occurs during reading from the socket or processing with the SSLEngine.
      */
     public int readFromSocket(ByteBuffer tempBuffer) throws IOException {
         // Read encrypted data from network
@@ -124,13 +145,24 @@ public class Session {
 
         if (bytesRead > 0) {
             Log.debug("{} Read {} bytes from network", getClientInfo(), bytesRead);
+
+            updateActivity();
             peerNetData.flip();
 
             // Process the data
             while (peerNetData.hasRemaining()) {
                 peerAppData.clear();
 
-                SSLEngineResult result = sslEngine.unwrap(peerNetData, peerAppData);
+                SSLEngineResult result;
+                try {
+                    result = sslEngine.unwrap(peerNetData, peerAppData);
+                } catch (SSLException e) {
+                    Log.error("{} SSLException during unwrap: {}",
+                            getClientInfo(), e.getMessage());
+                    // Don't close immediately, let the connection recover
+                    peerNetData.compact();
+                    return bytesRead;
+                }
 
                 Log.debug("{} unwrap: status={}, hsStatus={}, consumed={}, produced={}",
                         getClientInfo(),
@@ -153,7 +185,8 @@ public class Session {
                                 (result.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.FINISHED ||
                                         result.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING)) {
                             initialHandshakeDone = true;
-                            Log.info("{} SSL handshake completed", getClientInfo());
+                            Log.info("{} SSL handshake completed, ready for application data",
+                                    getClientInfo());
                         }
 
                         // If we have application data, store it
@@ -172,12 +205,13 @@ public class Session {
                         break;
 
                     case BUFFER_UNDERFLOW:
-                        // Need more network data
+                        // Need more network data - this is NORMAL
+                        Log.debug("{} Buffer underflow, waiting for more data", getClientInfo());
                         peerNetData.compact();
                         return bytesRead;
 
                     case CLOSED:
-                        Log.info("{} Peer closed SSL connection", getClientInfo());
+                        Log.info("{} Peer closed SSL connection cleanly", getClientInfo());
                         closeSocket();
                         return -1;
                 }
@@ -185,8 +219,18 @@ public class Session {
 
             peerNetData.compact();
 
-        } else if (bytesRead < 0) {
-            Log.debug("{} End of stream", getClientInfo());
+        } else if (bytesRead == 0) {
+            // No data available - this is NORMAL for non-blocking I/O
+            Log.debug("{} No data available to read", getClientInfo());
+            return 0;
+
+        } else { // bytesRead < 0
+            // Only log and close if we're sure it's EOF
+            if (initialHandshakeDone) {
+                Log.info("{} Client disconnected (EOF)", getClientInfo());
+            } else {
+                Log.warn("{} Client disconnected before handshake completed", getClientInfo());
+            }
             closeSocket();
             return -1;
         }
@@ -355,8 +399,17 @@ public class Session {
      */
     public SocketReadCallbackResult readHandler() {
         if (!initialHandshakeDone) {
+            Log.debug("{} Handshake not done, skipping read handler", getClientInfo());
             return SocketReadCallbackResult.KEEP_READING;
         }
+
+        if (readBuffer.getActiveSize() == 0) {
+            Log.debug("{} No application data to process", getClientInfo());
+            return SocketReadCallbackResult.KEEP_READING;
+        }
+
+        Log.debug("{} Processing {} bytes of application data",
+                getClientInfo(), readBuffer.getActiveSize());
 
         while (readBuffer.getActiveSize() > 0) {
 
