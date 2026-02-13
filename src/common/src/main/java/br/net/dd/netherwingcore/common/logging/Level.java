@@ -44,6 +44,13 @@ public enum Level {
     DEBUG,
 
     /**
+     * Represents trace-level information that provides detailed insights into the application's execution flow.
+     * This level is typically used for very fine-grained logging, such as method entry and exit points,
+     * variable values, and other detailed information that can help trace the execution of the application.
+     */
+    TRACE,
+
+    /**
      * Represents log messages that are intended to be output to the console.
      * This level is used for messages that should be visible in the console output,
      * regardless of the configured log file targets.

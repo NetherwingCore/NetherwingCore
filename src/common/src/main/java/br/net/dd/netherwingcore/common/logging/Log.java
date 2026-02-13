@@ -115,6 +115,16 @@ public class Log {
     }
 
     /**
+     * Logs a trace message with optional parameters for formatting.
+     * The message is formatted using the provided parameters if any are given.
+     *
+     * @param message    The trace message to log, which should be an instance of {@link TraceMessage}.
+     * @param parameters Optional parameters to format the message. If provided, the message will be formatted
+     *                   using these parameters before logging.
+     */
+    public void trace(String message, Object... parameters) { processLog( message, Level.TRACE, parameters); }
+
+    /**
      * Logs a message with additional details such as logging level and target files.
      * This method processes an array of {@link Detail} objects to determine the message,
      * severity level, and the files where the logs will be written.
@@ -195,6 +205,8 @@ public class Log {
             detailsList.add(new WarningMessage(formatMessage));
         } else if (level == Level.DEBUG) {
             detailsList.add(new DebugMessage(formatMessage));
+        } else if (level == Level.TRACE) {
+            detailsList.add(new TraceMessage(formatMessage));
         } else {
             detailsList.add(new InformationMessage(formatMessage));
         }
