@@ -10,9 +10,11 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLSession;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -49,9 +51,16 @@ public class Session {
     // Authentication state and account information.
     private volatile boolean authenticated;
     private volatile boolean initialHandshakeDone;
-    private volatile long lastActivityTime;
     private String accountName;
     private int accountId;
+
+    // Timing for idle connection management and handshake timeouts.
+    private volatile long lastActivityTime;
+    private volatile long handshakeCompletedTime;
+    private static final long IDLE_TIMEOUT_MS = 30000; // 30 seconds
+    private static final long POST_HANDSHAKE_TIMEOUT_MS = 5000; // 5 seconds after handshake completion
+
+    private volatile boolean closed = false;
 
     /**
      * Constructs a new Session for a given SocketChannel and SSLEngine.
@@ -84,8 +93,9 @@ public class Session {
         this.initialHandshakeDone = false;
 
         this.lastActivityTime = System.currentTimeMillis();
+        this.handshakeCompletedTime = -1; // Indicates handshake not completed yet
 
-        logger.log("New session created for " + getClientInfo());
+        logger.debug("New session created for {}", getClientInfo());
     }
 
     /**
@@ -112,22 +122,26 @@ public class Session {
     }
 
     /**
-     * Updates the last activity time for this session. This method should be called whenever there is activity on the session (e.g., reading or writing data)
-     * to ensure that the session's idle timeout can be accurately determined.
-     */
-    private void updateActivity() {
-        this.lastActivityTime = System.currentTimeMillis();
-    }
-
-    /**
      * Checks if the session has been idle for longer than the specified timeout. This method compares the current time with the last recorded activity time
      * to determine if the session should be considered idle and potentially closed due to inactivity.
      *
-     * @param timeoutMillis The idle timeout in milliseconds.
      * @return true if the session has been idle for longer than the specified timeout, false otherwise.
      */
-    public boolean isIdle(long timeoutMillis) {
-        return (System.currentTimeMillis() - lastActivityTime) > timeoutMillis;
+    public boolean isIdle() {
+        long now = System.currentTimeMillis();
+
+        // If the handshake is completed but no application data has been received within the post-handshake timeout, consider it idle
+        if (initialHandshakeDone && handshakeCompletedTime > 0) {
+            long timeSinceHandshake = now - handshakeCompletedTime;
+            if (timeSinceHandshake > POST_HANDSHAKE_TIMEOUT_MS && readBuffer.getActiveSize() == 0) {
+                logger.warn("{} No data received {}ms after handshake completion",
+                        getClientInfo(), timeSinceHandshake);
+                return true;
+            }
+        }
+
+        // Otherwise, check if the session has been idle based on the last activity time
+        return (now - lastActivityTime) > IDLE_TIMEOUT_MS;
     }
 
     /**
@@ -144,9 +158,9 @@ public class Session {
         int bytesRead = socketChannel.read(peerNetData);
 
         if (bytesRead > 0) {
-            logger.debug("{} Read {} bytes from network", getClientInfo(), bytesRead);
+            this.lastActivityTime = System.currentTimeMillis();
 
-            updateActivity();
+            logger.debug("{} Read {} bytes from network", getClientInfo(), bytesRead);
             peerNetData.flip();
 
             // Process the data
@@ -185,8 +199,29 @@ public class Session {
                                 (result.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.FINISHED ||
                                         result.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING)) {
                             initialHandshakeDone = true;
-                            logger.info("{} SSL handshake completed, ready for application data",
-                                    getClientInfo());
+                            handshakeCompletedTime = System.currentTimeMillis(); // Record handshake completion time
+
+                            SSLSession sslSession = sslEngine.getSession();
+                            logger.debug("╔══════════════════════════════════════════════════════");
+                            logger.debug("║ {} SSL Handshake Completed", getClientInfo());
+                            logger.debug("╠══════════════════════════════════════════════════════");
+                            logger.debug("║ Protocol:      {}", sslSession.getProtocol());
+                            logger.debug("║ Cipher Suite:  {}", sslSession.getCipherSuite());
+                            logger.debug("║ Session ID:    {}",
+                                    bytesToHex(sslSession.getId()).substring(0,
+                                            Math.min(32, bytesToHex(sslSession.getId()).length())));
+                            logger.debug("║ Valid:         {}", sslSession.isValid());
+
+                            try {
+                                var peerCerts = sslSession.getPeerCertificates();
+                                logger.debug("║ Peer Certs:    {} certificate(s)", peerCerts.length);
+                            } catch (Exception e) {
+                                logger.debug("║ Peer Certs:    None (server doesn't require client cert)");
+                            }
+
+                            logger.debug("╚══════════════════════════════════════════════════════");
+                            logger.debug("{} ⏳ Waiting for client to send application data...", getClientInfo());
+
                         }
 
                         // If we have application data, store it
@@ -194,17 +229,17 @@ public class Session {
                             byte[] data = new byte[peerAppData.remaining()];
                             peerAppData.get(data);
                             readBuffer.write(data);
-                            logger.debug("{} Stored {} bytes of application data",
-                                    getClientInfo(), data.length);
 
-                            boolean isTraceEnabled = true; // Set to true to enable hex dump of received data
-                            if (isTraceEnabled) { // TODO: Make this configurable
-                                StringBuilder hex = new StringBuilder();
-                                for (int i = 0; i < Math.min(data.length, 64); i++) {
-                                    hex.append(String.format("%02X ", data[i]));
-                                }
-                                logger.debug("{} First bytes: {}", getClientInfo(), hex);
+                            logger.debug("╔══════════════════════════════════════════════════════");
+                            logger.debug("║ {} Received Application Data", getClientInfo());
+                            logger.debug("╠══════════════════════════════════════════════════════");
+                            logger.debug("║ Size: {} bytes", data.length);
+                            if (data.length > 0) {
+                                logger.debug("║ First bytes (hex): {}",
+                                        bytesToHex(Arrays.copyOf(data, Math.min(32, data.length))));
                             }
+                            logger.debug("╚══════════════════════════════════════════════════════");
+
                         }
                         break;
 
@@ -235,8 +270,24 @@ public class Session {
 
         } else { // bytesRead < 0
             // Only log and close if we're sure it's EOF
-            if (initialHandshakeDone) {
-                logger.info("{} Client disconnected (EOF)", getClientInfo());
+            if (initialHandshakeDone && handshakeCompletedTime > 0) {
+                long timeSinceHandshake = System.currentTimeMillis() - handshakeCompletedTime;
+                if (readBuffer.getActiveSize() == 0) {
+                    logger.warn("╔══════════════════════════════════════════════════════");
+                    logger.warn("║ {} Client Disconnected", getClientInfo());
+                    logger.warn("╠══════════════════════════════════════════════════════");
+                    logger.warn("║ Time since handshake: {}ms", timeSinceHandshake);
+                    logger.warn("║ Data received: 0 bytes");
+                    logger.warn("║ Reason: Client closed connection without sending data");
+                    logger.warn("║ Likely causes:");
+                    logger.warn("║   - Testing SSL connectivity only");
+                    logger.warn("║   - Certificate not trusted");
+                    logger.warn("║   - Not a real Battle.net client");
+                    logger.warn("╚══════════════════════════════════════════════════════");
+                } else {
+                    logger.info("{} Client disconnected after sending {} bytes",
+                            getClientInfo(), readBuffer.getActiveSize());
+                }
             } else {
                 logger.warn("{} Client disconnected before handshake completed", getClientInfo());
             }
@@ -245,6 +296,20 @@ public class Session {
         }
 
         return bytesRead;
+    }
+
+    /**
+     * Helper method to convert byte array to hex string for logging purposes. This is used to log the session ID in a readable format.
+     *
+     * @param bytes The byte array to convert to hex string.
+     * @return A string representation of the byte array in hexadecimal format.
+     */
+    private static String bytesToHex(byte[] bytes) {
+        StringBuilder hex = new StringBuilder(bytes.length * 2);
+        for (byte b : bytes) {
+            hex.append(String.format("%02X", b));
+        }
+        return hex.toString();
     }
 
     /**
@@ -546,7 +611,7 @@ public class Session {
      * it returns a result indicating that more data is needed. If processing fails, it closes the socket and returns a result indicating that processing should stop. If processing is successful and complete,
      * it returns an empty Optional, allowing the caller to continue to the next stage.
      *
-     * @param method The ProcessMethod representing the logic for processing a specific stage of packet handling.
+     * @param method       The ProcessMethod representing the logic for processing a specific stage of packet handling.
      * @param outputBuffer The MessageBuffer used for storing data during this stage of processing.
      * @return An Optional containing a SocketReadCallbackResult if processing is not complete or if there was an error, or an empty Optional if processing was successful and complete.
      */
@@ -578,7 +643,7 @@ public class Session {
      * It constructs a header for the response, including the token, service ID, and size of the serialized message. It then creates a MessageBuffer
      * containing the header and the serialized message, and adds it to the write queue to be sent to the client.
      *
-     * @param token The authentication token associated with this response.
+     * @param token    The authentication token associated with this response.
      * @param response The protobuf Message to be sent as a response to the client.
      */
     public void sendResponse(int token, com.google.protobuf.Message response) {
@@ -602,7 +667,7 @@ public class Session {
      * Sends a response to the client with a specific status code. This method is used for sending responses that do not include a protobuf message body,
      * but still need to include a header with the token and status. It constructs a header with the provided token and status, and adds it to the write queue to be sent to the client.
      *
-     * @param token The authentication token associated with this response.
+     * @param token  The authentication token associated with this response.
      * @param status The status code to be included in the response header.
      */
     public void sendResponse(int token, int status) {
@@ -636,14 +701,22 @@ public class Session {
      * It also logs the closure of the session and handles any IOException that may occur during the closing process.
      */
     public void closeSocket() {
+        if (closed) {
+            return; // Prevent multiple close attempts
+        }
+        closed = true;
+
+        // Log the client info before closing, since socketChannel will be closed and may not provide remote address afterward
+        String clientInfo = getClientInfo();
+
         try {
             if (!sslEngine.isOutboundDone()) {
                 sslEngine.closeOutbound();
             }
             socketChannel.close();
-            logger.info("{} Session closed", getClientInfo());
+            logger.info("{} Session closed", clientInfo);
         } catch (IOException e) {
-            logger.error("{} Error closing: {}", getClientInfo(), e.getMessage());
+            logger.error("{} Error closing: {}", clientInfo, e.getMessage());
         }
     }
 
@@ -671,13 +744,33 @@ public class Session {
     }
 
     // Getters and setters for session state and buffers.
-    public MessageBuffer getReadBuffer() { return readBuffer; }
-    public boolean isAuthenticated() { return authenticated; }
-    public void setAuthenticated(boolean authenticated) { this.authenticated = authenticated; }
-    public String getAccountName() { return accountName; }
-    public void setAccountName(String accountName) { this.accountName = accountName; }
-    public int getAccountId() { return accountId; }
-    public void setAccountId(int accountId) { this.accountId = accountId; }
+    public MessageBuffer getReadBuffer() {
+        return readBuffer;
+    }
+
+    public boolean isAuthenticated() {
+        return authenticated;
+    }
+
+    public void setAuthenticated(boolean authenticated) {
+        this.authenticated = authenticated;
+    }
+
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
+    public int getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(int accountId) {
+        this.accountId = accountId;
+    }
 
     /**
      * Functional interface for processing a stage of packet handling. This is used in the partialProcessPacket method

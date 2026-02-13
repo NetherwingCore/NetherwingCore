@@ -46,11 +46,12 @@ public class ServiceDispatcher {
      * as the value. This allows for efficient routing of incoming RPC calls to the appropriate service based on the service hash.
      */
     private void registerServices() {
+
         addService(new AuthenticationService());
         addService(new ConnectionService());
         addService(new GameUtilitiesService());
 
-        logger.log("ServiceDispatcher initialized with " + dispatchers.size() + " services.");
+        logger.info("Registered services: {} services", dispatchers.size());
     }
 
     /**
@@ -65,7 +66,7 @@ public class ServiceDispatcher {
         int serviceHash = service.getServiceHash();
         dispatchers.put(serviceHash, service::callServerMethod);
 
-        logger.log("Registered service: " + service.getClass().getSimpleName() + " (hash: 0x" + Integer.toHexString(serviceHash) + ")");
+        logger.debug("Registered service: {} (hash: 0x{})", service.getClass().getSimpleName(), Integer.toHexString(serviceHash));
     }
 
     /**
@@ -83,10 +84,10 @@ public class ServiceDispatcher {
     public void dispatch(Session session, int serviceHash, int token, int methodId, MessageBuffer buffer) {
         ServiceMethod method = dispatchers.get(serviceHash);
         if (method != null) {
-            logger.log("Dispatching call to service with hash: 0x" + Integer.toHexString(serviceHash) + " (method ID: " + methodId + ")");
+            logger.debug("Dispatching call to service with hash: 0x{} (method ID: {})", Integer.toHexString(serviceHash), methodId);
             method.call(session, token, methodId, buffer);
         } else {
-            logger.log("No service found for hash: 0x" + Integer.toHexString(serviceHash));
+            logger.debug("Received call for unknown service hash: 0x{} (method ID: {})", Integer.toHexString(serviceHash), methodId);
         }
     }
 

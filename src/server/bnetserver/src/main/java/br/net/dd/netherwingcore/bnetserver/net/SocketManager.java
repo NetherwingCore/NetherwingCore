@@ -12,8 +12,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -45,7 +44,9 @@ public class SocketManager {
      */
     private void initSSL() throws Exception {
         sslContext = SSLContextImpl.get();
-        logger.info("SSL context initialized successfully");
+        logger.debug("SSL context initialized successfully");
+        logger.debug("Supported protocols: {}", String.join(", ", sslContext.getSupportedSSLParameters().getProtocols()));
+        logger.debug("Supported cipher suites: {}", sslContext.getSupportedSSLParameters().getCipherSuites().length);
     }
 
     /**
@@ -170,6 +171,31 @@ public class SocketManager {
 
             // Enable only secure TLS protocols (TLSv1.2 and TLSv1.3) and disable older, less secure versions.
             sslEngine.setEnabledProtocols(new String[]{"TLSv1.2", "TLSv1.3"});
+
+            // Log the enabled protocols for debugging purposes.
+            logger.debug("Enabled protocols: {}",
+                    String.join(", ", sslEngine.getEnabledProtocols()));
+
+            // Use cipher suites compatible with Battle.net.
+            String[] preferredCiphers = {
+                    "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+                    "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+                    "TLS_RSA_WITH_AES_256_GCM_SHA384",
+                    "TLS_RSA_WITH_AES_128_GCM_SHA256"
+            };
+
+            String[] supportedCiphers = sslEngine.getSupportedCipherSuites();
+            List<String> enabledCiphers = new ArrayList<>();
+            for (String preferred : preferredCiphers) {
+                if (Arrays.asList(supportedCiphers).contains(preferred)) {
+                    enabledCiphers.add(preferred);
+                }
+            }
+
+            if (!enabledCiphers.isEmpty()) {
+                sslEngine.setEnabledCipherSuites(enabledCiphers.toArray(new String[0]));
+                logger.debug("Using cipher suites: {}", String.join(", ", enabledCiphers));
+            }
 
             // Create a new session for the accepted connection and register it with the selector.
             Session session = new Session(clientChannel, sslEngine);
@@ -302,7 +328,6 @@ public class SocketManager {
      * removing any sessions that are no longer active.
      */
     private void updateSessions() {
-        long idleTimeout = 120000; // 2 minutos
 
         sessions.values().removeIf(session -> {
             if (!session.isOpen()) {
@@ -310,8 +335,8 @@ public class SocketManager {
                 return true;
             }
 
-            if (session.isIdle(idleTimeout)) {
-                logger.info("{} Session idle for too long, closing", session.getClientInfo());
+            if (session.isIdle()) {
+                logger.debug("{} Session idle for too long, closing", session.getClientInfo());
                 session.closeSocket();
                 return true;
             }
@@ -327,18 +352,32 @@ public class SocketManager {
      * @param key the selection key representing the session to close
      */
     private void closeSession(SelectionKey key) {
+        Session session = null;
+        SocketChannel channel = null;
+
         try {
-            SocketChannel channel = (SocketChannel) key.channel();
-            Session session = sessions.remove(channel);
+            channel = (SocketChannel) key.channel();
+            session = sessions.remove(channel);
+
+            String clientInfo = (session != null) ? session.getClientInfo() :
+                    (channel != null && channel.isOpen() ? channel.getRemoteAddress().toString() : "unknown");
 
             if (session != null) {
                 session.closeSocket();
             }
 
             key.cancel();
-            channel.close();
+
+            if (channel != null && channel.isOpen()) {
+                channel.close();
+            }
+
+            logger.debug("{} Session closed and removed from manager", clientInfo);
+
         } catch (IOException e) {
             logger.error("Error closing session: {}", e.getMessage());
+        } catch (Exception e) {
+            logger.error("Unexpected error closing session: {}", e.getMessage(), e);
         }
     }
 
@@ -368,6 +407,6 @@ public class SocketManager {
             logger.error("Error closing server: {}", e.getMessage());
         }
 
-        logger.log("BnetServer stopped.");
+        logger.info("Battle.net Service stopped, Sessions: {}", sessions.size());
     }
 }
