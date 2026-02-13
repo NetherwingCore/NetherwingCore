@@ -27,6 +27,8 @@
                     <!-- prevents the keystore from being filtered here -->
                     <exclude>netherwingcore_keystore.jks</exclude>
                     <exclude>netherwingcore_keystore.p12</exclude>
+                    <exclude>bnetserver.jks</exclude>
+                    <exclude>bnetserver.p12</exclude>
                 </excludes>
             </resource>
 
@@ -37,6 +39,8 @@
                 <includes>
                     <include>netherwingcore_keystore.jks</include>
                     <include>netherwingcore_keystore.p12</include>
+                    <include>bnetserver.jks</include>
+                    <include>bnetserver.p12</include>
                 </includes>
             </resource>
         </resources>

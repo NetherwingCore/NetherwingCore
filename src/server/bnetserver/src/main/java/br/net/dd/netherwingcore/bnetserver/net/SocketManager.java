@@ -75,13 +75,13 @@ public class SocketManager {
             serverChannel.register(selector, java.nio.channels.SelectionKey.OP_ACCEPT);
 
             running = true;
-            logger.info("BnetServer listening on {}:{}", bindIp, String.valueOf(port));
+            logger.info("BnetServer listening on {}:{}", bindIp, port);
 
             new Thread(this::run, "SocketManager-Thread").start();
 
             return  true;
         } catch (Exception e) {
-            logger.log("Failed to start server: " + e.getMessage());
+            logger.fatal("Failed to start server: {}" + e);
             return false;
         }
 
@@ -110,7 +110,6 @@ public class SocketManager {
                     keyIterator.remove();
 
                     if (!key.isValid()) {
-                        logger.debug("Selected key is invalid");
                         continue;
                     }
 
@@ -122,9 +121,16 @@ public class SocketManager {
                         } else if (key.isWritable()) {
                             handleWrite(key);
                         }
+                    } catch (CancelledKeyException e) {
+                        logger.trace("Key cancelled: {}", e);
                     } catch (Exception e) {
-                        logger.error("Error handling key: {}", e.getMessage());
-                        closeSession(key);
+                        // ✅ FULL ERROR LOG
+                        logger.error("Error handling key: {}", e);
+                        try {
+                            closeSession(key);
+                        } catch (Exception ex) {
+                            logger.error("Error closing session after error: {}", ex);
+                        }
                     }
                 }
 

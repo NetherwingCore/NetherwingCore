@@ -35,7 +35,7 @@ public class SSLContextImpl {
     private static SSLContextImpl instance; // Singleton instance of SSLContextImpl
 
     private final SSLContext sslContext; // The initialized SSLContext instance
-    private static final String KEYSTORE_PATH = "/netherwingcore_keystore.jks"; // Path to the keystore
+    private static final String KEYSTORE_PATH = "/bnetserver.jks"; // Path to the keystore
     public static final String CERTIFICATE_CRT = "/netherwingcore.crt"; // Path to the certificate file
     public static final String CERTIFICATE_KEY = "/netherwingcore.key"; // Path to the private key file
     private static final String PROTOCOL = "TLS"; // The SSL/TLS protocol to use

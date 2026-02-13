@@ -39,18 +39,33 @@ public class MessageBuffer {
      * @param newSize The new size of the buffer in bytes.
      */
     public void resize(int newSize) {
+        if (newSize <= 0) {
+            throw new IllegalArgumentException("Invalid buffer size: " + newSize);
+        }
+
         if (newSize <= buffer.capacity()) {
-            buffer.limit(newSize);
+            // ✅ Clears EVERYTHING and resets to the new size.
+            readPosition = 0;
+            writePosition = 0;
+            buffer.clear();           // Reset position=0, limit=capacity
+            buffer.limit(newSize);    // Now set the limit to the desired size.
             return;
         }
 
         ByteBuffer newBuffer = ByteBuffer.allocate(newSize);
         newBuffer.order(ByteOrder.LITTLE_ENDIAN);
 
-        buffer.flip();
-        newBuffer.put(buffer);
+        // ✅ Copies existing data to the new buffer if there is any.
+        if (writePosition > 0 && writePosition <= buffer.capacity()) {
+            buffer.position(0);
+            buffer.limit(writePosition);
+            newBuffer.put(buffer);
+        }
 
         this.buffer = newBuffer;
+        // ✅ Resets positions after creating a new buffer.
+        this.readPosition = 0;
+        this.writePosition = 0;
     }
 
     /**
@@ -61,6 +76,11 @@ public class MessageBuffer {
      */
     public void write(byte[] data, int length) {
         ensureCapacity(writePosition + length);
+
+        if (writePosition + length > buffer.limit()) {
+            buffer.limit(Math.min(buffer.capacity(), writePosition + length));
+        }
+
         buffer.position(writePosition);
         buffer.put(data, 0, length);
         writePosition += length;
@@ -146,7 +166,7 @@ public class MessageBuffer {
      * @return The number of bytes available for writing.
      */
     public int getRemainingSpace() {
-        return buffer.capacity() - writePosition;
+        return buffer.limit() - writePosition;
     }
 
     /**
@@ -188,6 +208,9 @@ public class MessageBuffer {
         if (required > buffer.capacity()) {
             int newCapacity = Math.max(required, buffer.capacity() * 2);
             resize(newCapacity);
+        } else if (required > buffer.limit()) {
+            // ✅ If capacity is sufficient but limit is not, simply expand the limit.
+            buffer.limit(Math.min(required, buffer.capacity()));
         }
     }
 
@@ -211,6 +234,42 @@ public class MessageBuffer {
         bytes[0] = (byte) (value & 0xFF);
         bytes[1] = (byte) ((value >> 8) & 0xFF);
         write(bytes);
+    }
+
+    /**
+     * Gets the total capacity of the buffer.
+     *
+     * @return The buffer capacity in bytes.
+     */
+    public int getCapacity() {
+        return buffer.capacity();
+    }
+
+    /**
+     * Gets the current write position in the buffer.
+     *
+     * @return The current write position.
+     */
+    public int getWritePos() {
+        return writePosition;
+    }
+
+    /**
+     * Gets the current read position in the buffer.
+     *
+     * @return The current read position.
+     */
+    public int getReadPos() {
+        return readPosition;
+    }
+
+    /**
+     * Gets the current limit of the buffer.
+     *
+     * @return The buffer limit.
+     */
+    public int getLimit() {
+        return buffer.limit();
     }
 
 }

@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class Log {
 
+    private boolean debugEnabled = false;
     private final String className;
 
     /**
@@ -243,11 +244,30 @@ public class Log {
         }
 
         Arrays.stream(parameters).iterator().forEachRemaining(param -> {
-            String value = String.valueOf(param);
+            String value = "";
+            if (param instanceof Exception) {
+                StackTraceElement[] stackTrace = ((Exception) param).getStackTrace();
+                AtomicReference<String> stackTraceRef = new AtomicReference<>("");
+                Arrays.stream(stackTrace).iterator().forEachRemaining(stackTraceElement -> {
+                    stackTraceRef.set(stackTraceRef.get() + stackTraceElement.toString() + "\n");
+                });
+                value = stackTraceRef.get();
+            } else {
+                value = String.valueOf(param);
+            }
+
             messageRef.set(
                     messageRef.get().replaceFirst("\\{}", value)
             );
         });
         return messageRef.get();
+    }
+
+    public boolean isDebugEnabled() {
+        return debugEnabled;
+    }
+
+    public void setDebugEnabled(boolean debugEnabled) {
+        this.debugEnabled = debugEnabled;
     }
 }

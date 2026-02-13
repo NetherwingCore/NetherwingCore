@@ -31,9 +31,9 @@ public class Main {
                 Config.get("BindIP", "0.0.0.0"),
                 Config.get("BattlenetPort", 1119)
         )) {
-            logger.log("NetherwingCore BNet Server started successfully.");
+            logger.info("NetherwingCore BNet Server started successfully.");
         } else {
-            logger.log("Failed to start NetherwingCore BNet Server.");
+            logger.fatal("Failed to start NetherwingCore BNet Server.");
             return;
         }
 

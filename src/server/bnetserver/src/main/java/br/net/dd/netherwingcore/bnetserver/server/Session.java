@@ -14,7 +14,6 @@ import javax.net.ssl.SSLSession;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -31,36 +30,32 @@ public class Session {
     private final SSLEngine sslEngine;
     private final ServiceDispatcher serviceDispatcher;
 
-    // Buffers for reading the incoming message in stages.
+    // Protocol Buffer processing buffers
     private final MessageBuffer headerLengthBuffer;
     private final MessageBuffer headerBuffer;
     private final MessageBuffer packetBuffer;
-
-    // Buffer for accumulating data read from the socket.
     private final MessageBuffer readBuffer;
 
-    // SSL Buffers - IMPORTANT: Manage position correctly
-    private final ByteBuffer peerNetData;   // Encrypted data received from the network
-    private ByteBuffer peerAppData;         // Decrypted data from the application
-    private ByteBuffer myNetData;           // Encrypted data to send
-    private final ByteBuffer myAppData;     // Application data to encrypt
+    // SSL/TLS buffers
+    private final ByteBuffer myAppData;
+    private ByteBuffer myNetData;
+    private ByteBuffer peerAppData;
+    private final ByteBuffer peerNetData;
 
-    // Queue for outgoing messages to be written to the socket.
     private final ConcurrentLinkedQueue<MessageBuffer> writeQueue;
 
-    // Authentication state and account information.
+    // Session state
     private volatile boolean authenticated;
     private volatile boolean initialHandshakeDone;
+    private volatile boolean closed;
+    private volatile long lastActivityTime;
+    private volatile long handshakeCompletedTime;
+
     private String accountName;
     private int accountId;
 
-    // Timing for idle connection management and handshake timeouts.
-    private volatile long lastActivityTime;
-    private volatile long handshakeCompletedTime;
     private static final long IDLE_TIMEOUT_MS = 30000; // 30 seconds
-    private static final long POST_HANDSHAKE_TIMEOUT_MS = 5000; // 5 seconds after handshake completion
-
-    private volatile boolean closed = false;
+    private static final long POST_HANDSHAKE_TIMEOUT_MS = 5000; // 5 seconds
 
     /**
      * Constructs a new Session for a given SocketChannel and SSLEngine.
@@ -69,6 +64,9 @@ public class Session {
      * @param sslEngine     The SSLEngine for handling SSL encryption/decryption for this session.
      */
     public Session(SocketChannel socketChannel, SSLEngine sslEngine) {
+
+        logger.setDebugEnabled(true);
+
         this.socketChannel = socketChannel;
         this.sslEngine = sslEngine;
         this.serviceDispatcher = ServiceDispatcher.getInstance();
@@ -76,26 +74,25 @@ public class Session {
         this.headerLengthBuffer = new MessageBuffer(2);
         this.headerBuffer = new MessageBuffer();
         this.packetBuffer = new MessageBuffer();
-        this.readBuffer = new MessageBuffer(8192);
+        this.readBuffer = new MessageBuffer(16384);
 
-        // Initializes SSL buffers based on the engine's session requirements.
-        int netBufferSize = sslEngine.getSession().getPacketBufferSize();
+        // Allocate SSL buffers according to SSLSession
         int appBufferSize = sslEngine.getSession().getApplicationBufferSize();
+        int netBufferSize = sslEngine.getSession().getPacketBufferSize();
 
-        // These buffers will be used for SSL handshakes and encryption/decryption.
-        this.peerNetData = ByteBuffer.allocate(netBufferSize);
-        this.peerAppData = ByteBuffer.allocate(appBufferSize);
-        this.myNetData = ByteBuffer.allocate(netBufferSize);
         this.myAppData = ByteBuffer.allocate(appBufferSize);
+        this.myNetData = ByteBuffer.allocate(netBufferSize);
+        this.peerAppData = ByteBuffer.allocate(appBufferSize);
+        this.peerNetData = ByteBuffer.allocate(netBufferSize);
 
         this.writeQueue = new ConcurrentLinkedQueue<>();
         this.authenticated = false;
         this.initialHandshakeDone = false;
-
+        this.closed = false;
         this.lastActivityTime = System.currentTimeMillis();
-        this.handshakeCompletedTime = -1; // Indicates handshake not completed yet
+        this.handshakeCompletedTime = -1;
 
-        logger.debug("New session created for {}", getClientInfo());
+        logger.info("New session created for {}", getClientInfo());
     }
 
     /**
@@ -104,44 +101,16 @@ public class Session {
      */
     public void start() {
 
-        logger.debug("{} Starting SSL handshake", getClientInfo());
-
         try {
-            // Starts the SSL handshake process.
+            logger.debug("{} Starting SSL handshake", getClientInfo());
             sslEngine.beginHandshake();
-
-            logger.debug("{} Handshake status: {}",
-                    getClientInfo(), String.valueOf(sslEngine.getHandshakeStatus()));
-
-        } catch (IOException e) {
-            logger.error("{} Failed to start SSL handshake: {}",
-                    getClientInfo(), e.getMessage());
+            logger.debug("{} Handshake status: {}", getClientInfo(), sslEngine.getHandshakeStatus());
+        } catch (SSLException e) {
+            logger.error("{} Failed to initiate handshake: {}",
+                    getClientInfo(), e.getMessage(), e);
             closeSocket();
         }
 
-    }
-
-    /**
-     * Checks if the session has been idle for longer than the specified timeout. This method compares the current time with the last recorded activity time
-     * to determine if the session should be considered idle and potentially closed due to inactivity.
-     *
-     * @return true if the session has been idle for longer than the specified timeout, false otherwise.
-     */
-    public boolean isIdle() {
-        long now = System.currentTimeMillis();
-
-        // If the handshake is completed but no application data has been received within the post-handshake timeout, consider it idle
-        if (initialHandshakeDone && handshakeCompletedTime > 0) {
-            long timeSinceHandshake = now - handshakeCompletedTime;
-            if (timeSinceHandshake > POST_HANDSHAKE_TIMEOUT_MS && readBuffer.getActiveSize() == 0) {
-                logger.warn("{} No data received {}ms after handshake completion",
-                        getClientInfo(), timeSinceHandshake);
-                return true;
-            }
-        }
-
-        // Otherwise, check if the session has been idle based on the last activity time
-        return (now - lastActivityTime) > IDLE_TIMEOUT_MS;
     }
 
     /**
@@ -157,8 +126,7 @@ public class Session {
         int bytesRead = socketChannel.read(peerNetData);
 
         if (bytesRead > 0) {
-            this.lastActivityTime = System.currentTimeMillis();
-
+            lastActivityTime = System.currentTimeMillis();
             logger.debug("{} Read {} bytes from network", getClientInfo(), bytesRead);
             peerNetData.flip();
 
@@ -171,8 +139,7 @@ public class Session {
                     result = sslEngine.unwrap(peerNetData, peerAppData);
                 } catch (SSLException e) {
                     logger.error("{} SSLException during unwrap: {}",
-                            getClientInfo(), e.getMessage());
-                    // Don't close immediately, let the connection recover
+                            getClientInfo(), e.getMessage(), e);
                     peerNetData.compact();
                     return bytesRead;
                 }
@@ -193,34 +160,11 @@ public class Session {
                             runDelegatedTasks();
                         }
 
-                        // Check if handshake completed
+                        // Check if handshake completed (during unwrap)
                         if (!initialHandshakeDone &&
                                 (result.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.FINISHED ||
                                         result.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING)) {
-                            initialHandshakeDone = true;
-                            handshakeCompletedTime = System.currentTimeMillis(); // Record handshake completion time
-
-                            SSLSession sslSession = sslEngine.getSession();
-                            logger.debug("╔══════════════════════════════════════════════════════");
-                            logger.debug("║ {} SSL Handshake Completed", getClientInfo());
-                            logger.debug("╠══════════════════════════════════════════════════════");
-                            logger.debug("║ Protocol:      {}", sslSession.getProtocol());
-                            logger.debug("║ Cipher Suite:  {}", sslSession.getCipherSuite());
-                            logger.debug("║ Session ID:    {}",
-                                    bytesToHex(sslSession.getId()).substring(0,
-                                            Math.min(32, bytesToHex(sslSession.getId()).length())));
-                            logger.debug("║ Valid:         {}", sslSession.isValid());
-
-                            try {
-                                var peerCerts = sslSession.getPeerCertificates();
-                                logger.debug("║ Peer Certs:    {} certificate(s)", peerCerts.length);
-                            } catch (Exception e) {
-                                logger.debug("║ Peer Certs:    None (server doesn't require client cert)");
-                            }
-
-                            logger.debug("╚══════════════════════════════════════════════════════");
-                            logger.debug("{} ⏳ Waiting for client to send application data...", getClientInfo());
-
+                            markHandshakeComplete();
                         }
 
                         // If we have application data, store it
@@ -229,16 +173,17 @@ public class Session {
                             peerAppData.get(data);
                             readBuffer.write(data);
 
-                            logger.debug("╔══════════════════════════════════════════════════════");
-                            logger.debug("║ {} Received Application Data", getClientInfo());
-                            logger.debug("╠══════════════════════════════════════════════════════");
-                            logger.debug("║ Size: {} bytes", data.length);
-                            if (data.length > 0) {
-                                logger.debug("║ First bytes (hex): {}",
-                                        bytesToHex(Arrays.copyOf(data, Math.min(32, data.length))));
-                            }
-                            logger.debug("╚══════════════════════════════════════════════════════");
+                            logger.info("╔══════════════════════════════════════════════════════");
+                            logger.info("║ {} 📦 Received Application Data", getClientInfo());
+                            logger.info("╠══════════════════════════════════════════════════════");
+                            logger.info("║ Size: {} bytes", data.length);
 
+                            if (logger.isDebugEnabled() && data.length > 0) {
+                                logger.info("║ Hex dump:");
+                                logger.info("║   {}", formatHexDump(data, 128));
+                            }
+
+                            logger.info("╚══════════════════════════════════════════════════════");
                         }
                         break;
 
@@ -248,7 +193,7 @@ public class Session {
                         break;
 
                     case BUFFER_UNDERFLOW:
-                        // Need more network data - this is NORMAL
+                        // Need more network data
                         logger.debug("{} Buffer underflow, waiting for more data", getClientInfo());
                         peerNetData.compact();
                         return bytesRead;
@@ -263,17 +208,15 @@ public class Session {
             peerNetData.compact();
 
         } else if (bytesRead == 0) {
-            // No data available - this is NORMAL for non-blocking I/O
-            logger.debug("{} No data available to read", getClientInfo());
+            logger.trace("{} No data available to read", getClientInfo());
             return 0;
 
         } else { // bytesRead < 0
-            // Only log and close if we're sure it's EOF
             if (initialHandshakeDone && handshakeCompletedTime > 0) {
                 long timeSinceHandshake = System.currentTimeMillis() - handshakeCompletedTime;
                 if (readBuffer.getActiveSize() == 0) {
                     logger.warn("╔══════════════════════════════════════════════════════");
-                    logger.warn("║ {} Client Disconnected", getClientInfo());
+                    logger.warn("║ {} ❌ Client Disconnected", getClientInfo());
                     logger.warn("╠══════════════════════════════════════════════════════");
                     logger.warn("║ Time since handshake: {}ms", timeSinceHandshake);
                     logger.warn("║ Data received: 0 bytes");
@@ -288,7 +231,8 @@ public class Session {
                             getClientInfo(), readBuffer.getActiveSize());
                 }
             } else {
-                logger.warn("{} Client disconnected before handshake completed", getClientInfo());
+                logger.warn("{} Client disconnected before handshake completed",
+                        getClientInfo());
             }
             closeSocket();
             return -1;
@@ -298,17 +242,36 @@ public class Session {
     }
 
     /**
-     * Helper method to convert byte array to hex string for logging purposes. This is used to log the session ID in a readable format.
-     *
-     * @param bytes The byte array to convert to hex string.
-     * @return A string representation of the byte array in hexadecimal format.
+     * Marks the SSL handshake as complete and logs relevant information about the established SSL session.
+     * This method is called when the handshake process finishes successfully,
+     * and it retrieves details from the SSLSession to log information such as the protocol, cipher suite, session ID, and peer certificates.
+     * It also logs that the session is ready to receive application data from the client.
      */
-    private static String bytesToHex(byte[] bytes) {
-        StringBuilder hex = new StringBuilder(bytes.length * 2);
-        for (byte b : bytes) {
-            hex.append(String.format("%02X", b));
+    private void markHandshakeComplete() {
+        initialHandshakeDone = true;
+        handshakeCompletedTime = System.currentTimeMillis();
+
+        SSLSession sslSession = sslEngine.getSession();
+        logger.info("╔══════════════════════════════════════════════════════");
+        logger.info("║ {} ✅ SSL Handshake Completed", getClientInfo());
+        logger.info("╠══════════════════════════════════════════════════════");
+        logger.info("║ Protocol:      {}", sslSession.getProtocol());
+        logger.info("║ Cipher Suite:  {}", sslSession.getCipherSuite());
+        logger.info("║ Session ID:    {}",
+                bytesToHex(sslSession.getId()).substring(0,
+                        Math.min(32, bytesToHex(sslSession.getId()).length())));
+        logger.info("║ Valid:         {}", sslSession.isValid());
+
+        try {
+            var peerCerts = sslSession.getPeerCertificates();
+            logger.info("║ Peer Certs:    {} certificate(s)", peerCerts.length);
+        } catch (Exception e) {
+            logger.info("║ Peer Certs:    None (server doesn't require client cert)");
         }
-        return hex.toString();
+
+        logger.info("╚══════════════════════════════════════════════════════");
+        logger.info("{} ⏳ Ready to receive application data from WoW client...",
+                getClientInfo());
     }
 
     /**
@@ -321,11 +284,12 @@ public class Session {
      * @throws IOException If an I/O error occurs during the SSL wrapping or socket writing process.
      */
     public boolean processWriteQueue() throws IOException {
+
         // Handle handshake wrapping if needed
         SSLEngineResult.HandshakeStatus hsStatus = sslEngine.getHandshakeStatus();
 
-        if (hsStatus == SSLEngineResult.HandshakeStatus.NEED_WRAP) {
-            logger.debug("{} Handshake needs WRAP", getClientInfo());
+        if (!initialHandshakeDone && hsStatus == SSLEngineResult.HandshakeStatus.NEED_WRAP) {
+            logger.trace("{} Handshake needs WRAP", getClientInfo());
 
             myAppData.clear();
             myNetData.clear();
@@ -349,14 +313,14 @@ public class Session {
                     runDelegatedTasks();
                 }
 
-                // Check if handshake completed
-                if (!initialHandshakeDone &&
-                        (result.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.FINISHED ||
-                                result.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING)) {
-                    initialHandshakeDone = true;
-                    logger.info("{} SSL handshake completed (after wrap)", getClientInfo());
+                // Check if handshake completed (during wrap)
+                if (result.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.FINISHED ||
+                        result.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
+                    markHandshakeComplete();
                 }
             }
+
+            return false; // Keep trying
         }
 
         // Don't send application data until handshake is done
@@ -388,7 +352,7 @@ public class Session {
                         }
                     }
 
-                    logger.debug("{} Sent encrypted packet: {} bytes",
+                    logger.trace("{} Sent encrypted packet: {} bytes",
                             getClientInfo(), result.bytesProduced());
 
                     writeQueue.poll(); // Successfully sent
@@ -399,7 +363,6 @@ public class Session {
                     break;
 
                 case BUFFER_UNDERFLOW:
-                    logger.fatal("{} End of stream", getClientInfo());
                     throw new SSLException("Buffer underflow during wrap");
 
                 case CLOSED:
@@ -472,34 +435,37 @@ public class Session {
      */
     public SocketReadCallbackResult readHandler() {
         if (!initialHandshakeDone) {
-            logger.debug("{} Handshake not done, skipping read handler", getClientInfo());
+            logger.trace("{} Handshake not done, skipping read handler", getClientInfo());
             return SocketReadCallbackResult.KEEP_READING;
         }
 
         int availableData = readBuffer.getActiveSize();
 
         if (availableData == 0) {
-            logger.debug("{} No application data to process yet", getClientInfo());
+            logger.trace("{} No application data to process yet", getClientInfo());
             return SocketReadCallbackResult.KEEP_READING;
         }
 
-        logger.debug("{} Processing {} bytes of application data",
-                getClientInfo(), readBuffer.getActiveSize());
+        logger.debug("{} 🔄 Processing {} bytes of application data",
+                getClientInfo(), availableData);
 
         while (readBuffer.getActiveSize() > 0) {
 
+            // STEP 1: Read 2-byte header length
             Optional<SocketReadCallbackResult> result1 =
                     partialProcessPacket(this::readHeaderLengthHandler, headerLengthBuffer);
             if (result1.isPresent()) {
                 return result1.get();
             }
 
+            // STEP 2: Read Protocol Buffer header
             Optional<SocketReadCallbackResult> result2 =
                     partialProcessPacket(this::readHeaderHandler, headerBuffer);
             if (result2.isPresent()) {
                 return result2.get();
             }
 
+            // STEP 3: Read Protocol Buffer payload
             Optional<SocketReadCallbackResult> result3 =
                     partialProcessPacket(this::readDataHandler, packetBuffer);
             if (result3.isPresent()) {
@@ -528,7 +494,9 @@ public class Session {
         }
 
         byte[] lengthBytes = headerLengthBuffer.getReadPointer(2);
-        int headerLength = ((lengthBytes[1] & 0xFF) << 8) | (lengthBytes[0] & 0xFF);
+
+        // ✅ BIG-ENDIAN (Battle.net protocol)
+        int headerLength = ((lengthBytes[0] & 0xFF) << 8) | (lengthBytes[1] & 0xFF);
 
         logger.debug("{} Header length: {} bytes", getClientInfo(), headerLength);
 
@@ -553,7 +521,15 @@ public class Session {
         }
 
         try {
-            Header header = Header.parseFrom(headerBuffer.toArray());
+            byte[] headerData = headerBuffer.toArray();
+
+            // ✅ Log of header bytes before parsing.
+            if (logger.isDebugEnabled()) {
+                logger.debug("{} Header bytes ({}): {}",
+                        getClientInfo(), headerData.length, bytesToHex(headerData));
+            }
+
+            Header header = Header.parseFrom(headerData);
 
             logger.debug("{} Header parsed: service=0x{}, method={}, token={}, size={}",
                     getClientInfo(),
@@ -565,7 +541,17 @@ public class Session {
             packetBuffer.resize(header.getSize());
             return true;
         } catch (InvalidProtocolBufferException e) {
-            logger.error("{} Failed to parse header: {}", getClientInfo(), e.getMessage());
+            logger.error("{} Failed to parse header: {}", getClientInfo(), e.getMessage(), e);
+
+            // ✅ Full buffet logo in case of error.
+            byte[] errorData = headerBuffer.toArray();
+            logger.error("{} Header buffer content (hex): {}",
+                    getClientInfo(), bytesToHex(errorData));
+
+            return false;
+        } catch (Exception e) {
+            logger.error("{} Unexpected error parsing header: {}",
+                    getClientInfo(), e.getMessage(), e);
             return false;
         }
     }
@@ -621,8 +607,30 @@ public class Session {
             int bytesToRead = Math.min(readBuffer.getActiveSize(),
                     outputBuffer.getRemainingSpace());
 
-            byte[] data = readBuffer.read(bytesToRead);
-            outputBuffer.write(data);
+            if (bytesToRead > 0) {
+                byte[] data = readBuffer.read(bytesToRead);
+
+                // ✅ Log in before writing.
+                logger.trace("{} Writing {} bytes to buffer (capacity={}, limit={}, writePos={}, remaining={})",
+                        getClientInfo(), data.length,
+                        outputBuffer.getCapacity(),
+                        outputBuffer.getLimit(),
+                        outputBuffer.getWritePos(),
+                        outputBuffer.getRemainingSpace());
+
+                try {
+                    outputBuffer.write(data);
+                } catch (Exception e) {
+                    logger.error("{} Error writing to buffer: {}",
+                            getClientInfo(), e.getMessage(), e);
+                    logger.error("{} Buffer state: capacity={}, writePos={}, dataLength={}",
+                            getClientInfo(),
+                            outputBuffer.getCapacity(),
+                            outputBuffer.getWritePos(),
+                            data.length);
+                    throw e;
+                }
+            }
         }
 
         if (outputBuffer.getRemainingSpace() > 0) {
@@ -740,6 +748,76 @@ public class Session {
         } catch (IOException e) {
             return "unknown";
         }
+    }
+
+    /**
+     * Checks if the session has been idle for longer than the defined timeout period.
+     * This method considers both the time since the last activity and the time since the handshake was completed.
+     * If the handshake is completed but no data has been received, it uses a shorter timeout to determine idleness.
+     * This helps to identify clients that connect but do not send any data after the handshake.
+     *
+     * @return true if the session is considered idle, false otherwise.
+     */
+    public boolean isIdle() {
+        long now = System.currentTimeMillis();
+
+        // If handshake completed but no data received, use short timeout
+        if (initialHandshakeDone && handshakeCompletedTime > 0) {
+            long timeSinceHandshake = now - handshakeCompletedTime;
+            if (timeSinceHandshake > POST_HANDSHAKE_TIMEOUT_MS && readBuffer.getActiveSize() == 0) {
+                logger.warn("{} No data received {}ms after handshake completion",
+                        getClientInfo(), timeSinceHandshake);
+                return true;
+            }
+        }
+
+        // General timeout
+        return (now - lastActivityTime) > IDLE_TIMEOUT_MS;
+    }
+
+    /**
+     * Converts a byte array to a hexadecimal string representation. This is useful for logging binary data in a human-readable format.
+     *
+     * @param bytes The byte array to be converted to hex.
+     * @return A string containing the hexadecimal representation of the input byte array.
+     */
+    private static String bytesToHex(byte[] bytes) {
+        if (bytes == null || bytes.length == 0) {
+            return "";
+        }
+        StringBuilder hex = new StringBuilder(bytes.length * 2);
+        for (byte b : bytes) {
+            hex.append(String.format("%02X", b));
+        }
+        return hex.toString();
+    }
+
+    /**
+     * Formats a byte array into a hex dump string for logging purposes. This method formats the byte array in a structured way, showing the hexadecimal values of the bytes.
+     * It also limits the output to a specified maximum number of bytes, and indicates if there are additional bytes that were not included in the dump.
+     *
+     * @param data     The byte array to be formatted as a hex dump.
+     * @param maxBytes The maximum number of bytes to include in the hex dump. If the data exceeds this length, it will indicate how many additional bytes are not shown.
+     * @return A string containing the formatted hex dump of the input byte array.
+     */
+    private String formatHexDump(byte[] data, int maxBytes) {
+        StringBuilder sb = new StringBuilder();
+        int length = Math.min(data.length, maxBytes);
+
+        for (int i = 0; i < length; i++) {
+            if (i > 0 && i % 16 == 0) {
+                sb.append("\n║   ");
+            } else if (i > 0 && i % 8 == 0) {
+                sb.append("  ");
+            }
+            sb.append(String.format("%02X ", data[i]));
+        }
+
+        if (data.length > maxBytes) {
+            sb.append("... (").append(data.length - maxBytes).append(" more bytes)");
+        }
+
+        return sb.toString();
     }
 
     // Getters and setters for session state and buffers.
