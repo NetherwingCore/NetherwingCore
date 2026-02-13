@@ -237,7 +237,7 @@ public class SocketManager {
             // Check how many bytes are available for reading.
             logger.debug("{} SocketManager.handleRead() called", session.getClientInfo());
 
-            int bytesRead = session.readFromSocket(tempBuffer);
+            int bytesRead = session.readFromSocket();
 
             logger.debug("{} SocketManager.handleRead() bytes read, bytesRead: {}", session.getClientInfo(), bytesRead);
 

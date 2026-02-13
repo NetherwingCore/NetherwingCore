@@ -146,14 +146,13 @@ public class Session {
 
     /**
      * Reads data from the socket and processes it through the SSL engine. This method handles reading encrypted data from the network,
-     * decrypting it using the SSLEngine, and storing the decrypted application data in the read buffer for further processing.
-     * It also manages the SSL handshake state and handles any SSL exceptions that may occur during the unwrap process.
+     * decrypting it using the SSLEngine, and storing the decrypted application data in the read buffer. It also manages the SSL handshake state
+     * and logs relevant information about the connection and received data. If the peer closes the connection or if there is an SSL error, this method will handle those cases appropriately.
      *
-     * @param tempBuffer A temporary ByteBuffer used for reading data from the socket.
-     * @return The number of bytes read from the socket, or -1 if the connection was closed by the client.
-     * @throws IOException If an I/O error occurs during reading from the socket or processing with the SSLEngine.
+     * @return The number of bytes read from the socket, or -1 if the connection was closed by the peer.
+     * @throws IOException If an I/O error occurs during reading from the socket or processing SSL data.
      */
-    public int readFromSocket(ByteBuffer tempBuffer) throws IOException {
+    public int readFromSocket() throws IOException {
         // Read encrypted data from network
         int bytesRead = socketChannel.read(peerNetData);
 
