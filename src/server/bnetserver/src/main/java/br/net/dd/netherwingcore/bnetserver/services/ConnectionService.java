@@ -69,23 +69,27 @@ public class ConnectionService extends ServiceBase {
     }
 
     private void handleKeepAlive(Session session, int token) {
-        logger.trace("{} Keep-alive received", session.getClientInfo());
+        NoData.Builder noData = NoData.newBuilder();
+
+        sendResponse(session, token, noData.build());
+
+        logger.debug("{} KeepAlive response sent", session.getClientInfo());
 
     }
 
     private void handleRequestDisconnect(Session session, int token, MessageBuffer buffer) {
-        DisconnectRequest request = parseMessage(buffer,
-                DisconnectRequest.newBuilder(), "RequestDisconnect");
+        DisconnectRequest request = parseMessage(buffer, DisconnectRequest.newBuilder(), "Disconnect");
+        DisconnectNotification.Builder response = DisconnectNotification.newBuilder();
+        response.setErrorCode(request.getErrorCode());
 
-        if (request != null && request.getErrorCode() != 0) {
-            logger.info("{} Client requested disconnect with error code: {}",
-                    session.getClientInfo(), request.getErrorCode());
-        } else {
-            logger.info("{} Client requested disconnect", session.getClientInfo());
-        }
+        sendResponse(session, token, response.build());
+
+        logger.info("{} Requested disconnect with error code {}. Socket closed.",
+                session.getClientInfo(), request.getErrorCode());
 
         // NO_RESPONSE method - don't send response
         session.closeSocket();
+
     }
 
 }

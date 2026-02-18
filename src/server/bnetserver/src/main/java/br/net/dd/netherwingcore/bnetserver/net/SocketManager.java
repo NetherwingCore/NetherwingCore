@@ -323,6 +323,9 @@ public class SocketManager {
                 key.interestOps(SelectionKey.OP_READ);
             }
 
+            logger.debug("{} Finished handleWrite, allWritten: {}, hasDataToWrite: {}, current interestOps: {}",
+                    session.getClientInfo(), allWritten, session.hasDataToWrite(), key.interestOps());
+
         } catch (IOException e) {
             logger.error("Error during write operation: {}", e.getMessage());
             closeSession(key);
