@@ -263,10 +263,19 @@ public class Log {
         return messageRef.get();
     }
 
+    /**
+     * Getters and setters for the debugEnabled field, which indicates whether debug logging is enabled.
+     * This allows for dynamic control over the logging level, enabling or disabling debug messages as needed.
+     */
     public boolean isDebugEnabled() {
         return debugEnabled;
     }
 
+    /**
+     * Sets the debugEnabled field to enable or disable debug logging.
+     *
+     * @param debugEnabled A boolean value indicating whether debug logging should be enabled (true) or disabled (false).
+     */
     public void setDebugEnabled(boolean debugEnabled) {
         this.debugEnabled = debugEnabled;
     }

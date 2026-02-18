@@ -41,33 +41,33 @@ public class LoginRESTService {
             server = HttpsServer.create(new InetSocketAddress(loginRestPort), 0);
             server.setHttpsConfigurator(new HttpsConfigurator(SSLContextImpl.get()));
 
-            logger.log("--");
+            logger.info("");
             // Register endpoints
             server.createContext("/bnetserver/", new HandlerIndex());
-            logger.log("Registered endpoint: /bnetserver/");
+            logger.info("Registered endpoint: /bnetserver/");
 
             server.createContext("/bnetserver/login/", new HandlerLogin());
-            logger.log("Registered endpoint: /bnetserver/login/");
+            logger.info("Registered endpoint: /bnetserver/login/");
 
             server.createContext("/bnetserver/login/srp/", new HandlePostLoginSrpChallenge());
-            logger.log("Registered endpoint: /bnetserver/login/srp/");
+            logger.info("Registered endpoint: /bnetserver/login/srp/");
 
             server.createContext("/bnetserver/gameAccounts/", new HandlerGetGameAccounts());
-            logger.log("Registered endpoint: /bnetserver/gameAccounts/");
+            logger.info("Registered endpoint: /bnetserver/gameAccounts/");
 
             server.createContext("/bnetserver/portal/", new HandlerGetPortal());
-            logger.log("Registered endpoint: /bnetserver/portal/");
+            logger.info("Registered endpoint: /bnetserver/portal/");
 
             server.createContext("/bnetserver/refreshLoginTicket/", new HandlerPostRefreshLoginTicket());
-            logger.log("Registered endpoint: /bnetserver/refreshLoginTicket/");
-            logger.log("--");
+            logger.info("Registered endpoint: /bnetserver/refreshLoginTicket/");
+            logger.info("");
 
             // Sets a thread pool executor for handling incoming requests
             server.setExecutor(Executors.newFixedThreadPool(4)); // Creates a thread pool with 4 threads
             // Starts the server
             server.start();
 
-            logger.log("Login REST Service started at https://localhost:" + loginRestPort + "/bnetserver/");
+            logger.info("Login REST Service started at https://localhost:{}/bnetserver/", loginRestPort);
 
         } catch (IOException e) {
             System.out.println("Failed to start Login REST Service: " + e.getMessage());
@@ -85,7 +85,7 @@ public class LoginRESTService {
         } else {
 
             if (server != null) {
-                logger.log("Login REST Service has already been initialized at https://localhost:{}/bnetserver/", loginRestPort);
+                logger.info("Login REST Service has already been initialized at https://localhost:{}/bnetserver/", loginRestPort);
             }
 
         }
@@ -97,7 +97,7 @@ public class LoginRESTService {
     public static void stop() {
 
         server.stop(0);
-        logger.log("Login REST Service stopped.");
+        logger.info("Login REST Service stopped.");
 
         if (instance != null) {
             instance = null;

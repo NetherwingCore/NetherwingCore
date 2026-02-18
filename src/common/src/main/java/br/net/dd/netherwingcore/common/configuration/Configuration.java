@@ -16,7 +16,7 @@ import static br.net.dd.netherwingcore.common.configuration.fields.Type.*;
  * The Configuration class represents a structure for managing configuration data.
  * It organizes the data into sections and items, supporting the retrieval of specific
  * configuration values by keys.
- *
+ * <p>
  * This class is designed to encapsulate a configuration's metadata such as a description
  * and a service name, while also storing the configuration's hierarchical structure in
  * sections and groups.
@@ -80,7 +80,7 @@ public class Configuration {
      * @param key A Key object representing the identifier for the desired item.
      * @return The Item object if found, or null otherwise.
      */
-    public Item get(Key key){
+    public Item get(Key key) {
 
         AtomicReference<Item> reference = new AtomicReference<>(null);
 
@@ -89,8 +89,8 @@ public class Configuration {
                 group.getItems().forEach(item -> {
                     List<Field> records = List.of(item.fields());
                     records.forEach(record -> {
-                        if (record instanceof Key){
-                            if (((Key) record).getValue().equals(key.getValue())){
+                        if (record instanceof Key) {
+                            if (((Key) record).getValue().equals(key.getValue())) {
                                 reference.set(item);
                                 return;
                             }
@@ -111,19 +111,19 @@ public class Configuration {
      * @param defaultValue The default integer value to return if the key is not found.
      * @return The integer value associated with the key, or the default value if not found.
      */
-    public Integer get(String key, Integer defaultValue){
+    public Integer get(String key, Integer defaultValue) {
 
         Item item = get(new Key(key));
 
-        if(item == null){
+        if (item == null) {
             return defaultValue;
         }
 
-        if (item.getValue() == null){
+        if (item.getValue() == null) {
             return defaultValue;
         }
 
-        if (item.getValue().getType().equals(NUMBER)){
+        if (item.getValue().getType().equals(NUMBER)) {
             return Integer.parseInt(item.getValue().getValue());
         }
 
@@ -138,19 +138,19 @@ public class Configuration {
      * @param defaultValue The default string value to return if the key is not found.
      * @return The string value associated with the key, or the default value if not found.
      */
-    public String get(String key, String defaultValue){
+    public String get(String key, String defaultValue) {
 
         Item item = get(new Key(key));
 
-        if(item == null){
+        if (item == null) {
             return defaultValue;
         }
 
-        if (item.getValue() == null){
+        if (item.getValue() == null) {
             return defaultValue;
         }
 
-        if (item.getValue().getType().equals(TEXT)){
+        if (item.getValue().getType().equals(TEXT)) {
             return item.getValue().getValue();
         }
 
