@@ -540,7 +540,7 @@ public enum BattlenetRpcErrorCode {
     ERROR_REPORT_REJECTED(0x0000AFCF),
     ERROR_REPORT_TOO_MANY_REQUESTS(0x0000AFD0),
 
-    ERROR_ACCOUNT_ALREADY_REGISTERD(0x0000BB80),
+    ERROR_ACCOUNT_ALREADY_REGISTERED(0x0000BB80),
     ERROR_ACCOUNT_NOT_REGISTERED(0x0000BB81),
     ERROR_ACCOUNT_REGISTRATION_PENDING(0x0000BB82),
 
@@ -636,7 +636,7 @@ public enum BattlenetRpcErrorCode {
     ERROR_WOW_SERVICES_AUTHENTICATOR_PARSE_FAILED(0x8000013B),
     ERROR_WOW_SERVICES_LEGAL_PARSE_FAILED(0x8000013C),
     ERROR_WOW_SERVICES_LOGIN_AUTHENTICATION_PARSE_FAILED(0x8000013D),
-    ERROR_WOW_SERIVCES_USER_MUST_ACCEPT_LEGAL(0x8000013E),
+    ERROR_WOW_SERVICES_USER_MUST_ACCEPT_LEGAL(0x8000013E),
     ERROR_WOW_SERVICES_DISCONNECTED(0x8000013F),
     ERROR_WOW_SERVICES_NO_HANDLER_FOR_DISPATCH(0x80000140),
     ERROR_WOW_SERVICES_PRE_DISPATCH_HANDLER_FAILED(0x80000141),
@@ -650,10 +650,20 @@ public enum BattlenetRpcErrorCode {
 
     private final int value;
 
+    /**
+     * Constructs a new BattlenetRpcErrorCode with the specified value.
+     *
+     * @param value The integer value associated with the error code.
+     */
     BattlenetRpcErrorCode(int value) {
         this.value = value;
     }
 
+    /**
+     * Retrieves the integer value associated with this error code.
+     *
+     * @return The integer value of the error code.
+     */
     public int getValue() {
         return value;
     }
