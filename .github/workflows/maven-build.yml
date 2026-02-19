@@ -26,4 +26,4 @@ jobs:
           distribution: "oracle"
           java-version: 25
           cache: "maven"
-      - run: ./mvnw verify
+      - run: mvn -B clean verify
