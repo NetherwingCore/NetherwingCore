@@ -32,6 +32,7 @@ public class Config {
      *
      * @param sample The configuration sample used to initialize the configuration.
      */
+    @SuppressWarnings("InstantiationOfUtilityClass")
     public static void loadConfig(ConfigurationSample sample) {
         if (instance == null) {
             instance = new Config();

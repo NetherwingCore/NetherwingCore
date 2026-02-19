@@ -1,14 +1,13 @@
 package br.net.dd.netherwingcore.common.configuration;
 
 import br.net.dd.netherwingcore.common.configuration.fields.Description;
-import br.net.dd.netherwingcore.common.configuration.fields.Field;
 import br.net.dd.netherwingcore.common.configuration.fields.Key;
 import br.net.dd.netherwingcore.common.configuration.structs.Item;
 import br.net.dd.netherwingcore.common.configuration.structs.Section;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static br.net.dd.netherwingcore.common.configuration.fields.Type.*;
 
@@ -75,32 +74,32 @@ public class Configuration {
     }
 
     /**
-     * Retrieves an Item object from the configuration by its Key.
+     * Checks if the given item contains a key that matches the specified key.
      *
-     * @param key A Key object representing the identifier for the desired item.
-     * @return The Item object if found, or null otherwise.
+     * @param item The Item to be checked for a matching key.
+     * @param key  The Key to be matched against the item's fields.
+     * @return true if a matching key is found in the item's fields; false otherwise.
+     */
+    private boolean matches(Item item, Key key) {
+        return Arrays.stream(
+                item.fields()
+        ).anyMatch(
+                field -> field instanceof Key && field.getValue().equals(key.getValue())
+        );
+    }
+
+    /**
+     * Retrieves an Item from the configuration that matches the specified key.
+     *
+     * @param key The Key to be matched against the items in the configuration.
+     * @return The first Item that matches the key, or null if no matching item is found.
      */
     public Item get(Key key) {
-
-        AtomicReference<Item> reference = new AtomicReference<>(null);
-
-        sections.forEach(section -> {
-            section.getGroups().forEach(group -> {
-                group.getItems().forEach(item -> {
-                    List<Field> records = List.of(item.fields());
-                    records.forEach(record -> {
-                        if (record instanceof Key) {
-                            if (((Key) record).getValue().equals(key.getValue())) {
-                                reference.set(item);
-                                return;
-                            }
-                        }
-                    });
-                });
-            });
-        });
-
-        return reference.get();
+        return sections.stream()
+                .flatMap(section -> section.getGroups().stream())
+                .flatMap(group -> group.getItems().stream())
+                .filter(item -> matches(item, key))
+                .findFirst() .orElse(null);
     }
 
     /**
