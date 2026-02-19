@@ -66,4 +66,4 @@ Read file [AUTHORS](AUTHORS).
 
 ## Links
 
-  - [Java Documentation](https://netherwingcore.github.io/NetherwingCore/)
+  - [Java DOCS](https://netherwingcore.github.io/NetherwingCore/)
