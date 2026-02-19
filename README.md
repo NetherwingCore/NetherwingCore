@@ -1,7 +1,7 @@
 <table border="0">
   <tr>
     <td>
-      <img src="https://raw.githubusercontent.com/NetherwingCore/NetherwingCore/master/docs/NetherwingCore_150x150.png" width="150">
+      <img src="https://raw.githubusercontent.com/NetherwingCore/NetherwingCore/master/doc/NetherwingCore_150x150.png" width="150">
     </td>
     <td>
       <strong>NetherwingCore (master)</strong><br>
