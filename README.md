@@ -34,7 +34,9 @@
 
 ## Build Status
 
-[![Java CI with Maven](https://github.com)](https://github.com)
+| Branch | Build Status                                                                                                                                                                                                          |
+|--------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| main   | [![Java CI with Maven](https://github.com/NetherwingCore/NetherwingCore/actions/workflows/maven-build.yml/badge.svg?branch=main)](https://github.com/NetherwingCore/NetherwingCore/actions/workflows/maven-build.yml) |
  
 ## Introduction
 
