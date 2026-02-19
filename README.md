@@ -68,4 +68,5 @@ Read file [AUTHORS](AUTHORS).
 
 ## Links
 
-  - [Java DOCS](https://netherwingcore.github.io/NetherwingCore/)
+  - <a href="https://netherwingcore.github.io/NetherwingCore/" target="_blank" rel="noopener noreferrer">Java DOCS</a>
+
