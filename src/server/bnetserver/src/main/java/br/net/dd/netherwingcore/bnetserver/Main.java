@@ -4,7 +4,7 @@ package br.net.dd.netherwingcore.bnetserver;
 import br.net.dd.netherwingcore.bnetserver.configuration.BnetConfigSample;
 import br.net.dd.netherwingcore.bnetserver.net.SocketManager;
 import br.net.dd.netherwingcore.bnetserver.rest.LoginRESTService;
-import br.net.dd.netherwingcore.common.banner.Banner;
+import br.net.dd.netherwingcore.common.Banner;
 import br.net.dd.netherwingcore.common.configuration.Config;
 import br.net.dd.netherwingcore.common.logging.Log;
 import br.net.dd.netherwingcore.common.logging.LogFile;

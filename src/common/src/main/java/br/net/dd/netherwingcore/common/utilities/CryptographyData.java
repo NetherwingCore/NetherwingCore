@@ -1,5 +1,7 @@
 package br.net.dd.netherwingcore.common.utilities;
 
+import br.net.dd.netherwingcore.common.GitRevision;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -25,7 +27,7 @@ public class CryptographyData {
     private static final Properties props = new Properties();
 
     static {
-        try (InputStream in = RevisionData.class.getResourceAsStream("/cryptography.properties")) {
+        try (InputStream in = GitRevision.class.getResourceAsStream("/cryptography.properties")) {
             props.load(in);
         } catch (IOException e) {
             throw new RuntimeException("Unable to load revision data.", e);
