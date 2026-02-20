@@ -1,0 +1,4 @@
+package br.net.dd.netherwingcore.scripts.easternkingdoms.blackrockmountain.blackrockspire;
+
+public class BossGyth {
+}

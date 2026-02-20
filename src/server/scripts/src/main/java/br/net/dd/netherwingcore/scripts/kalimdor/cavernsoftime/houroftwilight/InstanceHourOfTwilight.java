@@ -1,0 +1,4 @@
+package br.net.dd.netherwingcore.scripts.kalimdor.cavernsoftime.houroftwilight;
+
+public class InstanceHourOfTwilight {
+}
