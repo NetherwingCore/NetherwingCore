@@ -24,10 +24,7 @@
 
 * [Build Status](#build-status)
 * [Introduction](#introduction)
-* [Requirements](#requirements)
-* [Install](#install)
-* [Reporting issues](#reporting-issues)
-* [Submitting fixes](#submitting-fixes)
+* [Requirements and Installation](#requirements-and-installation)
 * [Copyright](#copyright)
 * [Authors &amp; Contributors](#authors--contributors)
 * [Links](#links)
@@ -42,18 +39,17 @@
 
 NetherwingCore is a MMORPG Framework based mostly in Java.
 
-It is derived from TrinityCore, the Massive Network Game Object Server, and is based on the code of that project with extensive changes over time to optimize, improve and cleanup the codebase at the same time as improving the in-game mechanics and functionality.
+This project is derived from TrinityCore, building upon its code. It adapts the logic originally implemented in C++ to Java.
 
-## Requirements
+**NetherwingCore** was created with the goal of implementing a **server/framework** for **World of Warcraft (build 7.3.5.26972)**, using the conceptual foundation and game rules established in TrinityCore as a reference. The aim is not simply to port code, but to **reinterpret and reconstruct the logic** within the Java ecosystem, seeking a balance between **behavioral fidelity** and a **clearer, more modular, and sustainable architecture**.
 
-Software requirements are available in the wiki for Windows, Linux and macOS.
+Version **7.3.5.26972** is the starting point for development, intended to provide a solid and evolving foundation for essential server systems (e.g., network infrastructure, authentication, entity management, combat rules, scripts, and support services). As the core matures and becomes viable, the project can be expanded to **other versions of the game**, maintaining the same philosophy: logical compatibility, organization, and incremental evolution.
 
-## Install
+In short, NetherwingCore is a Java-based framework inspired by TrinityCore, designed to serve as a **development and experimentation platform** for the community, focusing on **maintainability**, **extensibility**, and **consistency** with the expected mechanics of World of Warcraft in the target build.
+
+## Requirements and Installation
 
 Detailed installation guides are available in the [INSTALL](INSTALL) file for Windows, Linux and macOS.
-
-## Submitting fixes
-
 
 ## Copyright
 
@@ -64,7 +60,6 @@ Read file [COPYING](COPYING).
 ## Authors &amp; Contributors
 
 Read file [AUTHORS](AUTHORS).
-
 
 ## Links
 

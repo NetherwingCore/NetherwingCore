@@ -1,17 +1,6 @@
-# Instalation
+# Requirements and Installation
 
 ## The following are required:
   - Java JDK 25 or later
   - (MySQL 8.4 or later)  or (MariaDB 12 or later)
   - This project was created using IntelliJ IDEA.
-
-# For your information
-## Generating a self-signed certificate:
-```
-keytool -genkeypair -alias NetherwingCoreCert -keyalg RSA -keysize 2048 -keystore netherwingcore_keystore.jks -storepass "N5e.m,UDqo&)?OZs" -validity 10950
-keytool -importkeystore -srckeystore netherwingcore_keystore.jks -srcstoretype PKCS12 -destkeystore netherwingcore_keystore.p12 -deststoretype PKCS12 -srcstorepass "N5e.m,UDqo&)?OZs" -deststorepass "N5e.m,UDqo&)?OZs"
-
-openssl pkcs12 -in netherwingcore_keystore.p12 -clcerts -nokeys -out netherwingcore.crt
-openssl pkcs12 -in netherwingcore_keystore.p12 -nocerts -nodes -out netherwingcore.key
-openssl pkcs12 -in netherwingcore_keystore.p12 -cacerts -nokeys -out netherwingcore-ca.crt
-```
