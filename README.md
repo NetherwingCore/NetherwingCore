@@ -25,9 +25,9 @@
 * [Build Status](#build-status)
 * [Introduction](#introduction)
 * [Requirements and Installation](#requirements-and-installation)
-* [Copyright](#copyright)
-* [Authors &amp; Contributors](#authors--contributors)
 * [Links](#links)
+* [Copyright](#copyright)
+
 
 ## Build Status
 
@@ -51,17 +51,12 @@ In short, NetherwingCore is a Java-based framework inspired by TrinityCore, desi
 
 Detailed installation guides are available in the [INSTALL](INSTALL) file for Windows, Linux and macOS.
 
+## Links
+
+- [Java DOCS](https://netherwingcore.github.io/NetherwingCore)
+
 ## Copyright
 
 License: GPL 2.0
 
 Read file [COPYING](COPYING).
-
-## Authors &amp; Contributors
-
-Read file [AUTHORS](AUTHORS).
-
-## Links
-
-  - [Java DOCS](https://netherwingcore.github.io/NetherwingCore)
-
