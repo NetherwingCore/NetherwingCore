@@ -263,3 +263,4 @@ br.net.dd.netherwingcore.shared.networking.connectioninitializers
 br.net.dd.netherwingcore.shared.packets
 br.net.dd.netherwingcore.shared.realm
 br.net.dd.netherwingcore.shared.secrets
+br.net.dd.netherwingcore.worldserver
