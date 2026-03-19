@@ -54,7 +54,7 @@ public class LoginDatabase extends GenericDatabase<LoginDatabaseStatements> {
      */
     @SafeVarargs
     @Override
-    public final boolean execute(LoginDatabaseStatements statement, Map<Integer, String>... params) {
+    public final boolean execute(LoginDatabaseStatements statement, Map<Integer, Object>... params) {
         return switch (statement.getConnectionFlag()) {
             case CONNECTION_SYNC -> syncExecute(statement, params);
             case CONNECTION_ASYNC -> asyncExecute(statement, params);
@@ -72,7 +72,7 @@ public class LoginDatabase extends GenericDatabase<LoginDatabaseStatements> {
      */
     @SafeVarargs
     @Override
-    protected final boolean syncExecute(LoginDatabaseStatements statement, Map<Integer, String>... params) {
+    protected final boolean syncExecute(LoginDatabaseStatements statement, Map<Integer, Object>... params) {
         PreparedStatement preparedStatement = getPreparedStatement(statement.getQuery(), params);
         if (preparedStatement != null) {
             try {
@@ -96,7 +96,7 @@ public class LoginDatabase extends GenericDatabase<LoginDatabaseStatements> {
      */
     @SafeVarargs
     @Override
-    protected final boolean asyncExecute(LoginDatabaseStatements statement, Map<Integer, String>... params) {
+    protected final boolean asyncExecute(LoginDatabaseStatements statement, Map<Integer, Object>... params) {
 
         ExecutorService executorService = Executors.newFixedThreadPool(this.aSyncTheadPoolSize);
 
@@ -132,7 +132,7 @@ public class LoginDatabase extends GenericDatabase<LoginDatabaseStatements> {
      */
     @SafeVarargs
     @Override
-    public final ResultSet query(LoginDatabaseStatements statement, Map<Integer, String>... params) {
+    public final ResultSet query(LoginDatabaseStatements statement, Map<Integer, Object>... params) {
         return switch (statement.getConnectionFlag()) {
             case CONNECTION_SYNC -> syncQuery(statement, params);
             case CONNECTION_ASYNC -> asyncQuery(statement, params);
@@ -150,7 +150,7 @@ public class LoginDatabase extends GenericDatabase<LoginDatabaseStatements> {
      */
     @SafeVarargs
     @Override
-    protected final ResultSet syncQuery(LoginDatabaseStatements statement, Map<Integer, String>... params) {
+    protected final ResultSet syncQuery(LoginDatabaseStatements statement, Map<Integer, Object>... params) {
         PreparedStatement preparedStatement = getPreparedStatement(statement.getQuery(), params);
         if (preparedStatement != null) {
             try {
@@ -172,7 +172,7 @@ public class LoginDatabase extends GenericDatabase<LoginDatabaseStatements> {
      */
     @SafeVarargs
     @Override
-    protected final ResultSet asyncQuery(LoginDatabaseStatements statement, Map<Integer, String>... params) {
+    protected final ResultSet asyncQuery(LoginDatabaseStatements statement, Map<Integer, Object>... params) {
 
         ExecutorService executorService = Executors.newFixedThreadPool(this.aSyncTheadPoolSize);
 

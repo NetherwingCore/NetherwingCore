@@ -97,7 +97,7 @@ public abstract class GenericDatabase<T> {
      * @return A PreparedStatement object with the parameters set, or null if the parameter count does not match.
      */
     @SafeVarargs
-    protected final PreparedStatement getPreparedStatement(String query, Map<Integer, String>... params) {
+    protected final PreparedStatement getPreparedStatement(String query, Map<Integer, Object>... params) {
         Long paramCount = paramCount(query);
         if (paramCount != params[0].size()) {
             return null;
@@ -124,7 +124,7 @@ public abstract class GenericDatabase<T> {
      * @param params    A variable number of maps containing parameter indices and their corresponding values.
      * @return true if the execution was successful, false otherwise.
      */
-    public abstract boolean execute(T statement, Map<Integer, String>... params);
+    public abstract boolean execute(T statement, Map<Integer, Object>... params);
 
     /**
      * Synchronous execution of a database statement.
@@ -133,7 +133,7 @@ public abstract class GenericDatabase<T> {
      * @param params    A variable number of maps containing parameter indices and their corresponding values.
      * @return true if the execution was successful, false otherwise.
      */
-    protected abstract boolean syncExecute(T statement, Map<Integer, String>... params);
+    protected abstract boolean syncExecute(T statement, Map<Integer, Object>... params);
 
     /**
      * Asynchronous execution of a database statement.
@@ -142,7 +142,7 @@ public abstract class GenericDatabase<T> {
      * @param params    A variable number of maps containing parameter indices and their corresponding values.
      * @return true if the execution was successful, false otherwise.
      */
-    protected abstract boolean asyncExecute(T statement, Map<Integer, String>... params);
+    protected abstract boolean asyncExecute(T statement, Map<Integer, Object>... params);
 
     /**
      * Executes a query and returns the result set.
@@ -151,7 +151,7 @@ public abstract class GenericDatabase<T> {
      * @param params    A variable number of maps containing parameter indices and their corresponding values.
      * @return A ResultSet containing the results of the query.
      */
-    public abstract ResultSet query(T statement, Map<Integer, String>... params);
+    public abstract ResultSet query(T statement, Map<Integer, Object>... params);
 
     /**
      * Synchronous query execution.
@@ -160,7 +160,7 @@ public abstract class GenericDatabase<T> {
      * @param params    A variable number of maps containing parameter indices and their corresponding values.
      * @return A ResultSet containing the results of the query.
      */
-    protected abstract ResultSet syncQuery(T statement, Map<Integer, String>... params);
+    protected abstract ResultSet syncQuery(T statement, Map<Integer, Object>... params);
 
     /**
      * Asynchronous query execution.
@@ -169,6 +169,6 @@ public abstract class GenericDatabase<T> {
      * @param params    A variable number of maps containing parameter indices and their corresponding values.
      * @return A ResultSet containing the results of the query.
      */
-    protected abstract ResultSet asyncQuery(T statement, Map<Integer, String>... params);
+    protected abstract ResultSet asyncQuery(T statement, Map<Integer, Object>... params);
 
 }
