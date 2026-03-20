@@ -8,6 +8,7 @@ import br.net.dd.netherwingcore.common.Banner;
 import br.net.dd.netherwingcore.common.configuration.Config;
 import br.net.dd.netherwingcore.common.logging.Log;
 import br.net.dd.netherwingcore.common.logging.LogFile;
+import br.net.dd.netherwingcore.database.updater.DBUpdater;
 
 public class Main {
 
@@ -22,7 +23,8 @@ public class Main {
 
         Banner.show("NetherwingCore BNet Server", "bnetserver.log", "");
 
-        logger.log("Loading configuration...");
+        // Run database updates before starting the server.
+        DBUpdater.run();
 
         LoginRESTService.start();
         socketManager = new SocketManager();
