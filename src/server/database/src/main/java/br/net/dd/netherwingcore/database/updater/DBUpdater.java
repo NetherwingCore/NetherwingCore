@@ -3,10 +3,7 @@ package br.net.dd.netherwingcore.database.updater;
 import br.net.dd.netherwingcore.common.configuration.Config;
 import br.net.dd.netherwingcore.common.logging.Log;
 import br.net.dd.netherwingcore.database.implementation.LoginDatabase;
-import br.net.dd.netherwingcore.database.implementation.LoginDatabaseStatements;
-
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import br.net.dd.netherwingcore.database.util.DBChecker;
 
 /**
  * DBUpdater is responsible for managing database updates based on configuration settings.
@@ -15,6 +12,8 @@ import java.sql.SQLException;
 public class DBUpdater {
 
     private static int enableDatabases;
+    private static int autoCreateDatabases;
+    private static int autoCreateTables;
     private static int autoSetup;
     private static int redundancy;
     private static int archivedRedundancy;
@@ -23,12 +22,13 @@ public class DBUpdater {
     private static Log logger;
 
     private DBUpdater() {
-
     }
 
     public static void run() {
 
         enableDatabases = Config.get("Updates.EnableDatabases", 1);
+        autoCreateDatabases = Config.get("Updates.AutoCreateDatabases",1);
+        autoCreateTables = Config.get("Updates.AutoCreateTables",1);
         autoSetup = Config.get("Updates.AutoSetup", 1);
         redundancy = Config.get("Updates.Redundancy", 1);
         archivedRedundancy = Config.get("Updates.ArchivedRedundancy", 0);
@@ -56,7 +56,16 @@ public class DBUpdater {
 
     private static void create(){
 
-        DatabaseFlag.fromValue(enableDatabases).forEach(flag -> {
+        if (autoCreateDatabases == 0) {
+            return;
+        }
+
+        if(DBChecker.database(LoginDatabase.getInstance().getConnectionInfos())){
+            logger.info("Database already exists. Skipping creation step.");
+            return;
+        }
+
+        DatabaseInfos.fromValue(enableDatabases).forEach(flag -> {
             logger.debug("Creating database for: " + flag.name());
         });
 
@@ -64,7 +73,11 @@ public class DBUpdater {
 
     private static void populate(){
 
-        DatabaseFlag.fromValue(enableDatabases).forEach(flag -> {
+        if (autoCreateTables == 0) {
+            return;
+        }
+
+        DatabaseInfos.fromValue(enableDatabases).forEach(flag -> {
             logger.debug("Populating database for: " + flag.name());
         });
 
@@ -72,7 +85,7 @@ public class DBUpdater {
 
     private static void update(){
 
-        DatabaseFlag.fromValue(enableDatabases).forEach(flag -> {
+        DatabaseInfos.fromValue(enableDatabases).forEach(flag -> {
             logger.debug("Updating database for: " + flag.name());
         });
 

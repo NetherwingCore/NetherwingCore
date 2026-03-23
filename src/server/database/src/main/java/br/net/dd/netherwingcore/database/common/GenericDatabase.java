@@ -69,6 +69,10 @@ public abstract class GenericDatabase<T> {
         return false;
     }
 
+    public ConnectionInfos getConnectionInfos() {
+        return this.connectionInfos;
+    }
+
     /**
      * Retrieves a connection from the connection pool.
      *
