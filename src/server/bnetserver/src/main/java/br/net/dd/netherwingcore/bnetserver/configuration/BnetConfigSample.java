@@ -275,8 +275,8 @@ public class BnetConfigSample extends ConfigurationSample {
                                                 "\".;/path/to/unix_socket;username;password;database\" ",
                                                 " - (use Unix sockets on Unix/Linux)"),
                                         new Key("LoginDatabaseInfo"),
-                                        new Value("\"127.0.0.1;3306;trinity;trinity;auth\"", TEXT),
-                                        new DefaultValue("\"127.0.0.1;3306;trinity;trinity;auth\""),
+                                        new Value("\"127.0.0.1;3306;netherwing;netherwing;auth\"", TEXT),
+                                        new DefaultValue("\"127.0.0.1;3306;netherwing;netherwing;auth\""),
                                         new Observations("The SSL option will enable TLS when connecting to the specified database. If not provided or",
                                                 "any value other than 'ssl' is set, TLS will not be used.")
                                 ))
@@ -328,18 +328,23 @@ public class BnetConfigSample extends ConfigurationSample {
                                         new DefaultValue("0 - (Enabled)", "0 - (Disabled)"),
                                         new Observations("This will only create the database itself, but not the tables. For that you need to enable AutoSetup.",
                                                 "The ROOT password needs to be confirmed; otherwise, the database will need to be created manually.")
-                                )).addItem(new Item(
+                                ))
+                        ).addGroup(new Group()
+                                .addItem(new Item(
                                         new Description("Auto create tables if they don't exist."),
                                         new Key("Updates.AutoCreateTables"),
                                         new Value("1", NUMBER),
                                         new DefaultValue("1 - (Enabled)", "0 - (Disabled)"),
                                         new Observations("This will only create the tables, but not populate them. For that you need to enable AutoSetup.")
-                                )).addItem(new Item(
+                                ))
+                        ).addGroup(new Group()
+                                .addItem(new Item(
                                         new Description("Password for the ROOT user of the database."),
+                                        new Example("\"RootPassword\""),
                                         new Key("Updates.RootPassword"),
-                                        new Value("", TEXT),
-                                        new DefaultValue("<blank> - (Disabled)"),
-                                        new Observations("This is only used if AutoCreateDatabases and AutoCreateTables.")
+                                        new Value("\"\"", TEXT),
+                                        new DefaultValue("\"\""),
+                                        new Observations("This is only used if AutoCreateDatabases is enabled.")
                                 ))
                         ).addGroup(new Group()
                                 .addItem(new Item(

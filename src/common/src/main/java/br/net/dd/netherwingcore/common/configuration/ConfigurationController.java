@@ -67,13 +67,13 @@ public class ConfigurationController {
 
         } else {
 
-            logger.warn("The configuration file was not found.");
+            logger.info("The configuration file was not found.");
 
             if (!Files.exists(configurationDistFilePath)) {
                 createFile(configurationSample.getConfiguration(), configurationDistFilePath);
             }
 
-            logger.warn("Rename the file {}.dist to {} and change the settings according to your project.",
+            logger.info("Rename the file {}.dist to {} and change the settings according to your project.",
                     configurationSample.getFileName(), configurationSample.getFileName());
 
             System.exit(1);
