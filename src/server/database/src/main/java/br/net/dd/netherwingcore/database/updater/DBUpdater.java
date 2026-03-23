@@ -65,7 +65,7 @@ public class DBUpdater {
             return;
         }
 
-        DatabaseInfos.fromValue(enableDatabases).forEach(flag -> {
+        DatabaseFlag.fromValue(enableDatabases).forEach(flag -> {
             logger.debug("Creating database for: " + flag.name());
         });
 
@@ -77,7 +77,7 @@ public class DBUpdater {
             return;
         }
 
-        DatabaseInfos.fromValue(enableDatabases).forEach(flag -> {
+        DatabaseFlag.fromValue(enableDatabases).forEach(flag -> {
             logger.debug("Populating database for: " + flag.name());
         });
 
@@ -85,7 +85,7 @@ public class DBUpdater {
 
     private static void update(){
 
-        DatabaseInfos.fromValue(enableDatabases).forEach(flag -> {
+        DatabaseFlag.fromValue(enableDatabases).forEach(flag -> {
             logger.debug("Updating database for: " + flag.name());
         });
 
