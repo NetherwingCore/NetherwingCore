@@ -5,6 +5,7 @@ import br.net.dd.netherwingcore.database.common.GenericDatabase;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.concurrent.*;
 
@@ -151,7 +152,17 @@ public class LoginDatabase extends GenericDatabase<LoginDatabaseStatements> {
     @SafeVarargs
     @Override
     protected final ResultSet syncQuery(LoginDatabaseStatements statement, Map<Integer, Object>... params) {
-        PreparedStatement preparedStatement = getPreparedStatement(statement.getQuery(), params);
+        PreparedStatement preparedStatement;
+        if (params.length != 0) {
+            preparedStatement = getPreparedStatement(statement.getQuery(), params);
+        } else {
+            try {
+                preparedStatement = getConnection().prepareStatement(statement.getQuery());
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         if (preparedStatement != null) {
             try {
                 return preparedStatement.executeQuery();

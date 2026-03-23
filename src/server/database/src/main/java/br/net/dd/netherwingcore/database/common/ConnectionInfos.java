@@ -33,7 +33,8 @@ public class ConnectionInfos {
      * @param infoString the connection information string to parse
      */
     public ConnectionInfos(String infoString){
-        List<String> tokens = Util.tokenize(infoString, ';', true);
+        String temp = infoString.replace("\"", "");
+        List<String> tokens = Util.tokenize(temp, ';', true);
 
         if (tokens.size() != 5 && tokens.size() != 6) {
             return;
@@ -103,5 +104,17 @@ public class ConnectionInfos {
      */
     public String getSsl() {
         return ssl;
+    }
+
+    @Override
+    public String toString() {
+        return "ConnectionInfos{" +
+                "user='" + user + '\'' +
+                ", password='" + password + '\'' +
+                ", database='" + database + '\'' +
+                ", host='" + host + '\'' +
+                ", portOrSocket='" + portOrSocket + '\'' +
+                ", ssl='" + ssl + '\'' +
+                '}';
     }
 }

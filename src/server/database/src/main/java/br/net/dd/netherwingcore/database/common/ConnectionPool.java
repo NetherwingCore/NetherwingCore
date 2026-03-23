@@ -1,5 +1,7 @@
 package br.net.dd.netherwingcore.database.common;
 
+import br.net.dd.netherwingcore.common.logging.Log;
+import br.net.dd.netherwingcore.database.updater.DBUpdater;
 import com.mysql.cj.jdbc.MysqlConnectionPoolDataSource;
 
 import javax.sql.ConnectionEvent;
@@ -13,6 +15,8 @@ public class ConnectionPool {
 
     private final ArrayBlockingQueue<PooledConnection> pool;
 
+    private static final Log logger = Log.getLogger(ConnectionPool.class.getSimpleName());
+
     public ConnectionPool(MysqlConnectionPoolDataSource ds, int size) {
         pool = new ArrayBlockingQueue<>(size);
 
@@ -21,7 +25,8 @@ public class ConnectionPool {
                 PooledConnection conn = ds.getPooledConnection();
                 pool.add(conn);
             } catch (Exception e) {
-                System.out.println("Failed to create connection for the pool: " + e.getMessage());
+                logger.fatal("Failed to create connection for the pool: {}", e.getLocalizedMessage());
+                System.exit(1);
             }
         }
 

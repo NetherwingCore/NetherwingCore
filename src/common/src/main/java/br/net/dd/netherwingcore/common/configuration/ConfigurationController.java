@@ -67,14 +67,16 @@ public class ConfigurationController {
 
         } else {
 
-            logger.log("The configuration file was not found.");
+            logger.warn("The configuration file was not found.");
 
             if (!Files.exists(configurationDistFilePath)) {
                 createFile(configurationSample.getConfiguration(), configurationDistFilePath);
             }
 
-            logger.log("Rename the file " + configurationSample.getFileName() + ".dist to " + configurationSample.getFileName()
-                    + " and change the settings according to your project.");
+            logger.warn("Rename the file {}.dist to {} and change the settings according to your project.",
+                    configurationSample.getFileName(), configurationSample.getFileName());
+
+            System.exit(1);
 
         }
     }
@@ -130,7 +132,7 @@ public class ConfigurationController {
      */
     private void createFile(Configuration configuration, Path configurationFilePath) {
 
-        logger.log("Creating default configuration file: " + configurationFilePath.toFile().getName());
+        logger.info("Creating default configuration file: {}", configurationFilePath.toFile().getName());
 
         String line = "#".repeat(100);
 

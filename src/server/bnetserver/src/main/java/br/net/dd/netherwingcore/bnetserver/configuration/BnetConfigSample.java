@@ -322,6 +322,27 @@ public class BnetConfigSample extends ConfigurationSample {
                                 ))
                         ).addGroup(new Group()
                                 .addItem(new Item(
+                                        new Description("Auto create databases if they don't exist."),
+                                        new Key("Updates.AutoCreateDatabases"),
+                                        new Value("0", NUMBER),
+                                        new DefaultValue("0 - (Enabled)", "0 - (Disabled)"),
+                                        new Observations("This will only create the database itself, but not the tables. For that you need to enable AutoSetup.",
+                                                "The ROOT password needs to be confirmed; otherwise, the database will need to be created manually.")
+                                )).addItem(new Item(
+                                        new Description("Auto create tables if they don't exist."),
+                                        new Key("Updates.AutoCreateTables"),
+                                        new Value("1", NUMBER),
+                                        new DefaultValue("1 - (Enabled)", "0 - (Disabled)"),
+                                        new Observations("This will only create the tables, but not populate them. For that you need to enable AutoSetup.")
+                                )).addItem(new Item(
+                                        new Description("Password for the ROOT user of the database."),
+                                        new Key("Updates.RootPassword"),
+                                        new Value("", TEXT),
+                                        new DefaultValue("<blank> - (Disabled)"),
+                                        new Observations("This is only used if AutoCreateDatabases and AutoCreateTables.")
+                                ))
+                        ).addGroup(new Group()
+                                .addItem(new Item(
                                         new Description("Auto populate empty databases."),
                                         new Key("Updates.AutoSetup"),
                                         new Value("1", NUMBER),
