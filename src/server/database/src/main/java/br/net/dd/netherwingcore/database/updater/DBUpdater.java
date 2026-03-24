@@ -2,8 +2,15 @@ package br.net.dd.netherwingcore.database.updater;
 
 import br.net.dd.netherwingcore.common.configuration.Config;
 import br.net.dd.netherwingcore.common.logging.Log;
-import br.net.dd.netherwingcore.database.implementation.LoginDatabase;
-import br.net.dd.netherwingcore.database.util.DBChecker;
+import br.net.dd.netherwingcore.database.common.ConnectionInfos;
+import br.net.dd.netherwingcore.database.util.DBTools;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.stream.Collectors;
 
 /**
  * DBUpdater is responsible for managing database updates based on configuration settings.
@@ -11,83 +18,149 @@ import br.net.dd.netherwingcore.database.util.DBChecker;
  */
 public class DBUpdater {
 
-    private static int enableDatabases;
-    private static int autoCreateDatabases;
-    private static int autoCreateTables;
-    private static int autoSetup;
-    private static int redundancy;
-    private static int archivedRedundancy;
-    private static int allowRehash;
+    private int autoCreateDatabases;
+    private int autoCreateTables;
+    private int autoSetup;
+    private int redundancy;
+    private int archivedRedundancy;
+    private int allowRehash;
 
-    private static Log logger;
+    private Log logger;
 
+    private static DBUpdater instance;
+
+    /**
+     * Private constructor to prevent instantiation of the DBUpdater class.
+     * This class is intended to be used as a singleton, and the run() method should be called to initialize it.
+     */
     private DBUpdater() {
     }
 
+    /**
+     * Initializes the DBUpdater by reading configuration settings and setting up the logger.
+     * It also checks which databases are enabled and performs the necessary setup, population, and updates based on the configuration.
+     */
     public static void run() {
 
-        enableDatabases = Config.get("Updates.EnableDatabases", 1);
-        autoCreateDatabases = Config.get("Updates.AutoCreateDatabases",1);
-        autoCreateTables = Config.get("Updates.AutoCreateTables",1);
-        autoSetup = Config.get("Updates.AutoSetup", 1);
-        redundancy = Config.get("Updates.Redundancy", 1);
-        archivedRedundancy = Config.get("Updates.ArchivedRedundancy", 0);
-        allowRehash = Config.get("Updates.AllowRehash", 1);
+        if (instance == null) {
+            instance = new DBUpdater();
+        }
 
-        logger = Log.getLogger(DBUpdater.class.getSimpleName());
+        instance.initialize();
 
-        if (enableDatabases == 0) {
+    }
+
+    /**
+     * Initializes the DBUpdater by reading configuration settings and setting up the logger.
+     * It also checks which databases are enabled and performs the necessary setup, population, and updates based on the configuration.
+     */
+    private void initialize() {
+
+        int enableDatabases = Config.get("Updates.EnableDatabases", 1);
+
+        if (enableDatabases != 1) {
             return;
         }
 
-        logger.info("Database updates are enabled. Starting the update process.");
+        this.autoCreateDatabases = Config.get("Updates.AutoCreateDatabases", 1);
+        this.autoCreateTables = Config.get("Updates.AutoCreateTables", 1);
+        this.autoSetup = Config.get("Updates.AutoSetup", 1);
+        this.redundancy = Config.get("Updates.Redundancy", 1);
+        this.archivedRedundancy = Config.get("Updates.ArchivedRedundancy", 0);
+        this.allowRehash = Config.get("Updates.AllowRehash", 1);
 
-        boolean connected = LoginDatabase.getInstance().connect();
+        this.logger = Log.getLogger(DBUpdater.class.getSimpleName());
 
-        if (autoSetup == 1) {
-            create();
-            populate();
-            update();
+        DatabaseFlag.fromValue(enableDatabases).forEach(flag -> {
+
+            logger.info("Database " + flag.getConfigKeyName() + " has been enabled.");
+
+            ConnectionInfos connectionInfos = new ConnectionInfos(Config.get(flag.getConfigKeyName(), "\"\""));
+
+            if (autoSetup == 1) {
+
+                if (autoCreateDatabases == 1) {
+                    create(connectionInfos);
+                }
+
+                if (autoCreateTables == 1) {
+                    populate(connectionInfos, flag);
+                }
+
+                update(connectionInfos, flag);
+
+            } else {
+                logger.info("Database AutoSetup are disabled. Skipping creation, population, and update steps.");
+            }
+
+        });
+
+    }
+
+    private void create(ConnectionInfos connectionInfos) {
+
+        if (!DBTools.checkDatabase(connectionInfos)) {
+
+            if (DBTools.createUser(connectionInfos)) {
+                logger.debug("User {} created successfully.", connectionInfos.getUser());
+            }
+
+            if (DBTools.grantUsage(connectionInfos)) {
+                logger.debug("User {} granted access to database.", connectionInfos.getUser());
+            }
+
+            if (DBTools.createDatabase(connectionInfos)) {
+                logger.debug("Database {} created successfully.", connectionInfos.getDatabase());
+            }
+
+            if (DBTools.grantAllPrivileges(connectionInfos)) {
+                logger.debug("User {} granted all privileges on database.", connectionInfos.getUser());
+            }
+
         } else {
-            logger.info("Database AutoSetup are disabled. Skipping creation, population, and update steps.");
+            logger.info("Database already exists. Skipping creation.");
+        }
+
+        boolean dataBaseExists = DBTools.checkDatabase(connectionInfos);
+        boolean userExists = DBTools.checkUser(connectionInfos);
+
+        if (dataBaseExists && userExists) {
+            logger.debug("Database and user for {} are set up correctly.", connectionInfos.getDatabase());
+        } else {
+            logger.error("Failed to set up database or user for {}. Database exists: {}, User exists: {}",
+                    connectionInfos.getDatabase(), dataBaseExists, userExists);
+            System.exit(1);
         }
 
     }
 
-    private static void create(){
+    private void populate(ConnectionInfos connectionInfos, DatabaseFlag flag) {
 
-        if (autoCreateDatabases == 0) {
-            return;
+        logger.debug("Populating database with {} records.", connectionInfos.getDatabase());
+
+        String sourceDir = Config.get("SourceDirectory", "").replace("\"", "");
+        Path sqlPath = Paths.get(sourceDir, "sql", "base", flag.getInternalName() + "_database.sql");
+
+        try {
+            String script = Files.lines(sqlPath).collect(Collectors.joining("\n"));
+
+            if (DBTools.executeStatement(connectionInfos, script, false)) {
+                logger.info("Database {} has been populated.", connectionInfos.getDatabase());
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
 
-        if(DBChecker.database(LoginDatabase.getInstance().getConnectionInfos())){
-            logger.info("Database already exists. Skipping creation step.");
-            return;
-        }
-
-        DatabaseFlag.fromValue(enableDatabases).forEach(flag -> {
-            logger.debug("Creating database for: " + flag.name());
-        });
-
-    };
-
-    private static void populate(){
-
-        if (autoCreateTables == 0) {
-            return;
-        }
-
-        DatabaseFlag.fromValue(enableDatabases).forEach(flag -> {
-            logger.debug("Populating database for: " + flag.name());
-        });
+        logger.debug("Looking for SQL file: {}{}", flag.getInternalName(), "_database.sql");
 
     }
 
-    private static void update(){
+    private void update(ConnectionInfos connectionInfos,  DatabaseFlag flag) {
 
-        DatabaseFlag.fromValue(enableDatabases).forEach(flag -> {
-            logger.debug("Updating database for: " + flag.name());
-        });
+        logger.debug("Checking for updates for database: {} ({})", connectionInfos.getDatabase(), flag.getInternalName());
+
+        DBTools.updateDatabaseFromFile(connectionInfos, null);
 
     }
 

@@ -8,21 +8,27 @@ import java.util.EnumSet;
  * The flags can be combined using bitwise operations to enable multiple databases at once.
  */
 public enum DatabaseFlag {
-    DATABASE_LOGIN(1),
-    DATABASE_CHARACTER(2),
-    DATABASE_WORLD(4),
-    DATABASE_HOTFIX(8),
-    DATABASE_SHOP(16);
+    DATABASE_LOGIN(1, "LoginDatabaseInfo", "auth"),
+    DATABASE_CHARACTER(2, "CharacterDatabaseInfo", "character"),
+    DATABASE_WORLD(4, "WorldDatabaseInfo", "world"),
+    DATABASE_HOTFIX(8, "HotfixDatabaseInfo", "hotfix"),
+    DATABASE_SHOP(16, "ShopDatabaseInfo", "shop"),;
 
     private final int mask;
+    private final String configKeyName;
+    private final String internalName;
 
     /**
-     * Constructor for the DatabaseFlag enum.
+     * Constructs a DatabaseFlag with the specified bitmask, configuration key name, and internal name.
      *
-     * @param mask The integer bitmask value associated with this flag.
+     * @param mask The integer bitmask representing this flag.
+     * @param configKeyName The name of the configuration key associated with this flag.
+     * @param internalName The internal name associated with this flag, corresponding to the database name.
      */
-    DatabaseFlag(final int mask) {
+    DatabaseFlag(int mask, String configKeyName, String internalName) {
         this.mask = mask;
+        this.configKeyName = configKeyName;
+        this.internalName = internalName;
     }
 
     /**
@@ -32,6 +38,24 @@ public enum DatabaseFlag {
      */
     public int getMask() {
         return mask;
+    }
+
+    /**
+     * Gets the name associated with this flag, which corresponds to a configuration key.
+     *
+     * @return The name of the flag.
+     */
+    public String getConfigKeyName() {
+        return configKeyName;
+    }
+
+    /**
+     * Gets the internal name associated with this flag, which corresponds to the database name.
+     *
+     * @return The internal name of the flag.
+     */
+    public String getInternalName() {
+        return internalName;
     }
 
     /**
