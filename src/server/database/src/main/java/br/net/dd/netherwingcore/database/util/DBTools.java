@@ -173,9 +173,7 @@ public class DBTools {
      */
     public static boolean loadDump(ConnectionInfos infos, Path dumpFile) {
 
-        if (Files.exists(dumpFile.toAbsolutePath())) {
-            System.out.println("Dump file found: " + dumpFile.toString());
-        } else {
+        if (!Files.exists(dumpFile.toAbsolutePath())) {
             throw new RuntimeException("Dump file not found: " + dumpFile.toString());
         }
 

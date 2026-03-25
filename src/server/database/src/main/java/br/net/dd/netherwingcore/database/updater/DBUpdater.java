@@ -99,19 +99,19 @@ public class DBUpdater {
         if (!DBTools.checkDatabase(connectionInfos)) {
 
             if (DBTools.createUser(connectionInfos)) {
-                logger.debug("User {} created successfully.", connectionInfos.getUser());
+                logger.debug("User {} created successfully on {}.", connectionInfos.getUser(), connectionInfos.getHost());
             }
 
             if (DBTools.grantUsage(connectionInfos)) {
-                logger.debug("User {} granted access to database.", connectionInfos.getUser());
+                logger.debug("User {} granted access *.* on {}.", connectionInfos.getUser(), connectionInfos.getHost());
             }
 
             if (DBTools.createDatabase(connectionInfos)) {
-                logger.debug("Database {} created successfully.", connectionInfos.getDatabase());
+                logger.debug("Database {} created successfully on {}.", connectionInfos.getDatabase(), connectionInfos.getHost());
             }
 
             if (DBTools.grantAllPrivileges(connectionInfos)) {
-                logger.debug("User {} granted all privileges on database.", connectionInfos.getUser());
+                logger.debug("User {} granted all privileges on database {}.", connectionInfos.getUser(), connectionInfos.getDatabase());
             }
 
         } else {
