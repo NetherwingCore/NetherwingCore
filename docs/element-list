@@ -33,7 +33,9 @@ br.net.dd.netherwingcore.common.utilities
 br.net.dd.netherwingcore.database
 br.net.dd.netherwingcore.database.common
 br.net.dd.netherwingcore.database.implementation
+br.net.dd.netherwingcore.database.parser
 br.net.dd.netherwingcore.database.updater
+br.net.dd.netherwingcore.database.util
 br.net.dd.netherwingcore.game
 br.net.dd.netherwingcore.game.accounts
 br.net.dd.netherwingcore.game.achievements

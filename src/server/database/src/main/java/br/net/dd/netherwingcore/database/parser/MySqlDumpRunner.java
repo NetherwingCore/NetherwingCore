@@ -114,8 +114,20 @@ public final class MySqlDumpRunner {
             this.next = fetchNext();
         }
 
+        /**
+         * Checks if there are more SQL statements to be read from the reader.
+         *
+         * @return true if there is at least one more SQL statement available, false otherwise
+         */
         @Override public boolean hasNext() { return next != null; }
 
+        /**
+         * Returns the next complete SQL statement from the reader. If there are no more statements, it throws a NoSuchElementException.
+         * The method also prepares the next statement for subsequent calls by fetching it immediately after returning the current one.
+         *
+         * @return the next complete SQL statement as a String
+         * @throws NoSuchElementException if there are no more SQL statements to read
+         */
         @Override public String next() {
             if (next == null) throw new NoSuchElementException();
             String out = next;
