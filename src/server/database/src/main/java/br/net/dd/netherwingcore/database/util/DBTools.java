@@ -2,7 +2,10 @@ package br.net.dd.netherwingcore.database.util;
 
 import br.net.dd.netherwingcore.common.configuration.Config;
 import br.net.dd.netherwingcore.database.common.ConnectionInfos;
+import br.net.dd.netherwingcore.database.parser.MySqlDumpRunner;
 
+import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.*;
 
@@ -34,12 +37,12 @@ public class DBTools {
     /**
      * Establishes a connection to the database using the provided ConnectionInfos and root credentials.
      *
-     * @param infos the ConnectionInfos object containing database connection details
+     * @param infos   the ConnectionInfos object containing database connection details
      * @param useRoot a boolean indicating whether to use root credentials for the connection
      * @return a Connection object representing the established connection to the database
      * @throws RuntimeException if there is an error during connection establishment
      */
-    private static Connection getConnection(ConnectionInfos infos, boolean useRoot) {
+    public static Connection getConnection(ConnectionInfos infos, boolean useRoot) {
         try {
 
             Connection connection;
@@ -48,7 +51,6 @@ public class DBTools {
             rootPassword = rootPassword.replace("\"", "");
 
             String url = "jdbc:mysql://" + infos.getHost() + ":3306/" + (useRoot ? "" : infos.getDatabase());
-            System.out.println("Connecting to database with URL: " + url);
 
             if (useRoot) {
                 connection = DriverManager.getConnection(url, ROOT_USER, rootPassword);
@@ -137,7 +139,7 @@ public class DBTools {
     /**
      * Executes the provided SQL statement using a connection established with the given ConnectionInfos.
      *
-     * @param infos the ConnectionInfos object containing database connection details
+     * @param infos       the ConnectionInfos object containing database connection details
      * @param formatedSQL the SQL statement to execute
      * @return true if the statement was executed successfully, false otherwise
      * @throws RuntimeException if there is an error during statement execution or connection handling
@@ -159,6 +161,31 @@ public class DBTools {
         } catch (SQLException ex) {
             throw new RuntimeException("Failed to close connection to the database: " + ex.getMessage(), ex);
         }
+    }
+
+    /**
+     * Loads a SQL dump file into the database specified in the ConnectionInfos object.
+     *
+     * @param infos    the ConnectionInfos object containing database connection details
+     * @param dumpFile the Path to the SQL dump file to be loaded
+     * @return true if the dump was loaded successfully, false otherwise
+     * @throws RuntimeException if there is an error during dump loading or file handling
+     */
+    public static boolean loadDump(ConnectionInfos infos, Path dumpFile) {
+
+        if (Files.exists(dumpFile.toAbsolutePath())) {
+            System.out.println("Dump file found: " + dumpFile.toString());
+        } else {
+            throw new RuntimeException("Dump file not found: " + dumpFile.toString());
+        }
+
+        try {
+            MySqlDumpRunner.runSqlDump(getConnection(infos, false), dumpFile);
+            return true;
+        } catch (IOException | SQLException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     /**
@@ -205,12 +232,6 @@ public class DBTools {
             throw new RuntimeException("Failed to check database existence: " + ex.getMessage(), ex);
         }
 
-    }
-
-    public static boolean populateDatabaseFromFile(ConnectionInfos infos, Path filePath) {
-        Connection connection = getConnection(infos, false);
-
-        return false; // Placeholder for actual implementation
     }
 
     public static boolean updateDatabaseFromFile(ConnectionInfos infos, Path filePath) {

@@ -5,12 +5,9 @@ import br.net.dd.netherwingcore.common.logging.Log;
 import br.net.dd.netherwingcore.database.common.ConnectionInfos;
 import br.net.dd.netherwingcore.database.util.DBTools;
 
-import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.stream.Collectors;
 
 /**
  * DBUpdater is responsible for managing database updates based on configuration settings.
@@ -141,22 +138,20 @@ public class DBUpdater {
         String sourceDir = Config.get("SourceDirectory", "").replace("\"", "");
         Path sqlPath = Paths.get(sourceDir, "sql", "base", flag.getInternalName() + "_database.sql");
 
-        try {
-            String script = Files.lines(sqlPath).collect(Collectors.joining("\n"));
-
-            if (DBTools.executeStatement(connectionInfos, script, false)) {
-                logger.info("Database {} has been populated.", connectionInfos.getDatabase());
-            }
-
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        if (!Files.exists(sqlPath)) {
+            logger.warn("SQL file {} not found. Skipping population for database {}.", sqlPath, connectionInfos.getDatabase());
+            return;
         }
 
-        logger.debug("Looking for SQL file: {}{}", flag.getInternalName(), "_database.sql");
+        if (DBTools.loadDump(connectionInfos, sqlPath)) {
+            logger.info("Database {} has been populated.", connectionInfos.getDatabase());
+        } else {
+            logger.error("Failed to populate database {} using SQL file {}.", connectionInfos.getDatabase(), sqlPath);
+        }
 
     }
 
-    private void update(ConnectionInfos connectionInfos,  DatabaseFlag flag) {
+    private void update(ConnectionInfos connectionInfos, DatabaseFlag flag) {
 
         logger.debug("Checking for updates for database: {} ({})", connectionInfos.getDatabase(), flag.getInternalName());
 
