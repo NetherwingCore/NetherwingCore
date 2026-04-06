@@ -1,10 +1,14 @@
 package br.net.dd.netherwingcore.database.updater;
 
 import br.net.dd.netherwingcore.common.configuration.Config;
+import br.net.dd.netherwingcore.common.download.ArchiveHandler;
 import br.net.dd.netherwingcore.common.logging.Log;
+import br.net.dd.netherwingcore.common.utilities.Util;
 import br.net.dd.netherwingcore.database.common.ConnectionInfos;
 import br.net.dd.netherwingcore.database.util.DBTools;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -57,6 +61,25 @@ public class DBUpdater {
 
         if (enableDatabases <= 0) {
             return;
+        }
+
+        Path downloadPaths = Paths.get(Util.getJarLocation(), "downloads");
+        if (!Files.exists(downloadPaths)) {
+            try {
+                Files.createDirectories(downloadPaths);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        try {
+            Path downloadFile = ArchiveHandler.downloadFile(
+                    "https://github.com/TrinityCore/TrinityCore/releases/download/TDB1200.26021/TDB_full_1200.26021_2026_02_06.7z",
+                    downloadPaths.toString() + File.separator + "TDB_full_1200.26021_2026_02_06.7z"
+            );
+            ArchiveHandler.extract(downloadFile, downloadPaths);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
 
         this.autoCreateDatabases = Config.get("Updates.AutoCreateDatabases", 1);
