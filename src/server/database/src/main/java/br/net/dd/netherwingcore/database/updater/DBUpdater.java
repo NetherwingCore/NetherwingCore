@@ -55,7 +55,7 @@ public class DBUpdater {
 
         int enableDatabases = Config.get("Updates.EnableDatabases", 1);
 
-        if (enableDatabases != 1) {
+        if (enableDatabases <= 0) {
             return;
         }
 

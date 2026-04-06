@@ -9,7 +9,7 @@ import java.util.EnumSet;
  */
 public enum DatabaseFlag {
     DATABASE_LOGIN(1, "LoginDatabaseInfo", "auth"),
-    DATABASE_CHARACTER(2, "CharacterDatabaseInfo", "character"),
+    DATABASE_CHARACTER(2, "CharacterDatabaseInfo", "characters"),
     DATABASE_WORLD(4, "WorldDatabaseInfo", "world"),
     DATABASE_HOTFIX(8, "HotfixDatabaseInfo", "hotfix"),
     DATABASE_SHOP(16, "ShopDatabaseInfo", "shop"),;
