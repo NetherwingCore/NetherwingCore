@@ -15,8 +15,21 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+/*
+ * Utility class for downloading files and extracting archives with progress display.
+ * Handles various archive formats supported by Apache Commons Compress, including .zip, .tar.gz, .7z, etc.
+ * Provides robust handling of HTTP redirects and content-type heuristics to avoid saving HTML error pages as files.
+ */
 public class ArchiveHandler {
 
+    /*
+     * Prints a progress bar to the console. If total is known, shows percentage and a bar; otherwise shows bytes downloaded.
+     * Uses carriage return to update the same line. Caller should print a newline after completion.
+     *
+     * @param prefix  A label to show before the progress (e.g. "Download" or "Extracting")
+     * @param current The current progress value (e.g. bytes downloaded or extracted)
+     * @param total   The total value for completion (e.g. total bytes to download or extract). If <= 0, total is unknown and only current will be shown.
+     */
     public static void printProgress(String prefix, long current, long total) {
         int barLength = 50;
         if (total <= 0) {
@@ -38,6 +51,15 @@ public class ArchiveHandler {
         System.out.print("\r" + prefix + " [" + bar + "] " + percentInt + "%");
     }
 
+    /*
+     * Downloads a file from the given URL to the specified destination path, following redirects and showing progress.
+     * Heuristically checks if the downloaded content looks like an HTML page (e.g. error page) and warns the user.
+     *
+     * @param fileUrl     The URL of the file to download
+     * @param destination The local file path to save the downloaded content
+     * @return The Path to the downloaded file
+     * @throws IOException If an I/O error occurs during downloading
+     */
     public static Path downloadFile(String fileUrl, String destination) throws IOException {
         URL url = new URL(fileUrl);
         int maxRedirects = 5;
@@ -121,6 +143,14 @@ public class ArchiveHandler {
         return Paths.get(destination);
     }
 
+    /*
+     * Extracts an archive file (e.g. .zip, .tar.gz, .7z) to the specified target directory, showing progress.
+     * Handles various formats supported by Apache Commons Compress. For .7z files, uses SevenZFile for better support.
+     *
+     * @param sourceFile The path to the archive file to extract
+     * @param targetDir  The directory to extract the contents into
+     * @throws Exception If an error occurs during extraction
+     */
     public static void extract(Path sourceFile, Path targetDir) throws Exception {
         String fileName = sourceFile.getFileName().toString().toLowerCase();
 
@@ -232,6 +262,14 @@ public class ArchiveHandler {
         System.out.println("\nExtraction complete!");
     }
 
+    /*
+     * Specialized extraction method for .7z files using SevenZFile, which provides better support for 7z archives.
+     * Similar progress strategy: first try to compute total uncompressed size; if not available, fall back to compressed-based progress.
+     *
+     * @param sourceFile The path to the .7z archive file
+     * @param targetDir  The directory to extract the contents into
+     * @throws IOException If an I/O error occurs during extraction
+     */
     public static void extract7z(Path sourceFile, Path targetDir) throws IOException {
         // First pass: sum entry sizes when available to compute uncompressed total
         long totalUncompressed = 0;
@@ -297,7 +335,9 @@ public class ArchiveHandler {
         System.out.println("\nExtraction complete!");
     }
 
-    // Simple CountingInputStream to measure compressed bytes read from the underlying file input.
+    /*
+     * A simple FilterInputStream that counts the number of bytes read through it. Used to track progress based on compressed bytes.
+     */
     private static class CountingInputStream extends FilterInputStream {
         private long count = 0;
 
